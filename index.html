@@ -115,7 +115,7 @@
     }
 
     .novel-card h3 {
-      padding: 10px;
+      padding: 10px 10px 5px 10px;
       font-size: 0.9rem;
       display: -webkit-box;
       -webkit-line-clamp: 2;
@@ -124,12 +124,17 @@
       margin-top: auto;
     }
 
+    /* Estilo atualizado do Badge de Histórico */
     .history-badge {
-        background: #333;
+        background: #2a2a2a;
         color: var(--primary-color);
         font-size: 0.75rem;
-        padding: 5px 10px;
+        padding: 8px 10px;
         border-top: 1px solid #444;
+        font-weight: bold;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     /* Novel Details View */
@@ -180,6 +185,24 @@
       text-overflow: ellipsis;
     }
     .chapter-item:hover { background: #333; border-color: var(--primary-color); }
+
+    .btn-continue {
+        width: 100%;
+        background: var(--primary-color);
+        color: black;
+        border: none;
+        padding: 12px;
+        font-weight: bold;
+        font-size: 1rem;
+        border-radius: var(--radius);
+        cursor: pointer;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+    .btn-continue:hover { opacity: 0.9; }
 
     /* Reader View */
     .reader-container {
@@ -298,14 +321,11 @@
       <div class="reader-container">
           <div class="reader-controls">
             <button class="btn-nav secondary" onclick="app.goBackToDetails()" title="Back to Novel">≡ List</button>
-            
             <button id="btn-prev" class="btn-nav">Prev</button>
-            
             <div style="text-align:center; flex:1; margin: 0 10px; overflow: hidden; min-width: 150px;">
                 <span id="reader-novel-title" style="display:block; font-size:0.8rem; color:#888;"></span>
                 <span id="reader-chapter-title" style="font-weight: bold; white-space: nowrap;"></span>
             </div>
-            
             <button id="btn-next" class="btn-nav">Next</button>
           </div>
           
@@ -326,7 +346,7 @@
 
   <script>
     // ==========================================================
-    // SERVICE: NovelApiService (Integrated)
+    // SERVICE
     // ==========================================================
     class NovelApiService {
       constructor() {
@@ -388,7 +408,6 @@
         let prevChap = null;
 
         if (index !== -1) {
-            // Assumes Descending list
             if (index > 0) nextChap = list[index - 1][1]; 
             if (index < list.length - 1) prevChap = list[index + 1][1];
         }
@@ -412,7 +431,7 @@
         return [...central, ...illusia, ...mania];
       }
 
-      // --- CentralNovel ---
+      // Sources
       async _centralGetNovelInfo(slug) {
         const doc = await this._fetch(`https://centralnovel.com/series/${slug}/`);
         const name = this._safeText(doc.querySelector("h1[itemprop=name]"));
@@ -457,7 +476,6 @@
         } catch { return []; }
       }
 
-      // --- Illusia ---
       async _illusiaLancamentos() {
         try {
           const doc = await this._fetch("https://illusia.com.br/lancamentos/");
@@ -504,7 +522,6 @@
         } catch { return []; }
       }
 
-      // --- NovelMania ---
       async _maniaLancamentos() {
         try {
           const doc = await this._fetch("https://novelmania.com.br");
@@ -561,7 +578,7 @@
       constructor() {
         this.api = new NovelApiService();
         this.currentNovelId = null;
-        this.currentNovelInfo = null; // Caching for history
+        this.currentNovelInfo = null;
         
         this.views = {
           home: document.getElementById('view-home'),
@@ -570,7 +587,6 @@
         };
         this.loader = document.getElementById('loader');
         
-        // Load History
         this.history = JSON.parse(localStorage.getItem('uninovel_history') || '[]');
 
         document.getElementById('search-input').addEventListener('keypress', (e) => {
@@ -592,7 +608,7 @@
 
       goBack() {
         this.showView('home');
-        this.renderHistory(); // Refresh history view
+        this.renderHistory(); 
       }
 
       goBackToDetails() {
@@ -611,7 +627,7 @@
 
       async loadReleases() {
         this.showView('home');
-        this.renderHistory(); // Show history on load
+        this.renderHistory();
         document.getElementById('novel-list').innerHTML = '';
         this.toggleLoader(true);
 
@@ -632,7 +648,6 @@
         this.showView('home');
         document.getElementById('home-title').innerText = `Search: "${query}"`;
         document.getElementById('novel-list').innerHTML = '';
-        // Hide history during search to reduce clutter
         document.getElementById('history-section').style.display = 'none';
         this.toggleLoader(true);
         try {
@@ -669,12 +684,13 @@
         }
         
         section.style.display = 'block';
+        
         container.innerHTML = this.history.map(item => `
-          <div class="novel-card" onclick="app.openNovel('${item.id}')">
+          <div class="novel-card" onclick="app.readChapter('${item.id}', '${item.chapterId}')">
             <span class="source-badge badge-${item.source}">${item.source}</span>
             <img src="${item.cover}" loading="lazy" onerror="this.src='https://via.placeholder.com/150?text=No+Cover'">
             <h3>${item.title}</h3>
-            <div class="history-badge">Last: ${item.chapterTitle}</div>
+            <div class="history-badge">▶ ${item.chapterTitle || 'Continue'}</div>
           </div>
         `).join('');
       }
@@ -688,9 +704,19 @@
 
         try {
           const info = await this.api.getNovelInfoAll(id);
-          this.currentNovelInfo = info; // Cache for history use
+          this.currentNovelInfo = info; 
           
           const genresHtml = info.genres ? info.genres.map(g => `<span class="tag">${g[1]}</span>`).join('') : '';
+          
+          const historyItem = this.history.find(h => h.id === id);
+          let continueBtn = '';
+          if (historyItem && historyItem.chapterTitle) {
+              continueBtn = `
+                <button class="btn-continue" onclick="app.readChapter('${id}', '${historyItem.chapterId}')">
+                    ▶ Continue: ${historyItem.chapterTitle}
+                </button>`;
+          }
+
           const chaptersHtml = info.chapters.map(c => `
             <div class="chapter-item" onclick="app.readChapter('${id}', '${c[1]}')">
               ${c[0]}
@@ -706,6 +732,9 @@
                 <div class="desc">${info.desc || 'No description available.'}</div>
               </div>
             </div>
+            
+            ${continueBtn}
+
             <h3 style="margin-bottom:10px;">Chapters (${info.chapters.length})</h3>
             <div class="chapter-list">
               ${chaptersHtml}
@@ -744,10 +773,8 @@
             ${data.content}
           `;
 
-          // Update History
           this.updateHistory(novelId, chapterId, data.title);
 
-          // Navigation Logic
           const setupBtn = (id1, id2, targetId, label) => {
             const el1 = document.getElementById(id1);
             const el2 = document.getElementById(id2);
@@ -779,28 +806,36 @@
       }
 
       updateHistory(novelId, chapterId, chapterTitle) {
-          // Ensure we have novel details cached
-          if (!this.currentNovelInfo) return;
+          // CRITICAL FIX: If we entered from History, currentNovelInfo might be null.
+          // We must try to recover title/cover from the existing history entry.
+          const existing = this.history.find(h => h.id === novelId);
+          
+          let title = 'Unknown Novel';
+          let cover = '';
+
+          if (this.currentNovelInfo) {
+              // Best case: We came from Details page
+              title = this.currentNovelInfo.nome;
+              cover = this.currentNovelInfo.cover;
+          } else if (existing) {
+              // Fallback: reuse old data
+              title = existing.title;
+              cover = existing.cover;
+          }
 
           const entry = {
               id: novelId,
-              title: this.currentNovelInfo.nome,
-              cover: this.currentNovelInfo.cover,
+              title: title,
+              cover: cover,
               chapterId: chapterId,
               chapterTitle: chapterTitle,
               source: novelId.split('-')[0],
               timestamp: Date.now()
           };
 
-          // Remove if exists (to push to top)
           this.history = this.history.filter(h => h.id !== novelId);
-          
-          // Add to top
           this.history.unshift(entry);
-          
-          // Limit to 20 items
           if (this.history.length > 20) this.history.pop();
-
           localStorage.setItem('uninovel_history', JSON.stringify(this.history));
       }
     }
