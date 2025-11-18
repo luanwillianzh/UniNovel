@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Universal Novel Reader</title>
+  <style>
+    :root {
+      --bg-color: #121212;
+      --surface-color: #1e1e1e;
+      --primary-color: #bb86fc;
+      --text-primary: #e0e0e0;
+      --text-secondary: #b0b0b0;
+      --spacing: 16px;
+      --radius: 8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-primary);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    header {
+      background-color: var(--surface-color);
+      padding: var(--spacing);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    h1 { font-size: 1.2rem; color: var(--primary-color); cursor: pointer; margin-right: 10px; }
+
+    .search-bar {
+      flex: 1;
+      display: flex;
+      min-width: 200px;
+    }
+
+    input {
+      flex: 1;
+      padding: 8px 12px;
+      border-radius: var(--radius) 0 0 var(--radius);
+      border: 1px solid #333;
+      background: #2c2c2c;
+      color: white;
+      outline: none;
+    }
+    input:focus { border-color: var(--primary-color); }
+
+    button.btn-search {
+      padding: 8px 16px;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      border: none;
+      background: var(--primary-color);
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    /* Views */
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: var(--spacing);
+      position: relative;
+    }
+
+    .view { display: none; animation: fadeIn 0.3s; }
+    .view.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Grid Layout for Novels */
+    .novel-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: var(--spacing);
+    }
+
+    .novel-card {
+      background: var(--surface-color);
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      position: relative;
+    }
+
+    .novel-card:hover { transform: translateY(-4px); box-shadow: 0 4px 12px rgba(0,0,0,0.6); }
+
+    .novel-card img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      background: #252525;
+    }
+
+    .novel-card h3 {
+      padding: 10px;
+      font-size: 0.9rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      margin-top: auto;
+    }
+
+    .history-badge {
+        background: #333;
+        color: var(--primary-color);
+        font-size: 0.75rem;
+        padding: 5px 10px;
+        border-top: 1px solid #444;
+    }
+
+    /* Novel Details View */
+    .details-header {
+      display: flex;
+      gap: var(--spacing);
+      margin-bottom: var(--spacing);
+      flex-wrap: wrap;
+    }
+
+    .details-cover {
+      width: 160px;
+      border-radius: var(--radius);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+      align-self: flex-start;
+    }
+
+    .details-info { flex: 1; min-width: 300px; }
+    .details-info h2 { color: var(--primary-color); margin-bottom: 8px; font-size: 1.5rem; }
+    .desc { 
+      font-size: 0.95rem; 
+      color: var(--text-secondary); 
+      max-height: 200px; 
+      overflow-y: auto; 
+      white-space: pre-wrap;
+      background: rgba(255,255,255,0.05);
+      padding: 10px;
+      border-radius: var(--radius);
+    }
+
+    .chapter-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 8px;
+      margin-top: var(--spacing);
+    }
+
+    .chapter-item {
+      background: var(--surface-color);
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      text-align: center;
+      border: 1px solid #333;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .chapter-item:hover { background: #333; border-color: var(--primary-color); }
+
+    /* Reader View */
+    .reader-container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .reader-controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding: 10px;
+      background: var(--surface-color);
+      border-radius: var(--radius);
+      position: sticky;
+      top: -10px; /* slight offset */
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .btn-nav {
+      background: var(--primary-color);
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+      color: black; 
+      font-weight: bold;
+      min-width: 60px;
+    }
+    .btn-nav.secondary {
+        background: #333;
+        color: #fff;
+    }
+    .btn-nav:disabled { background: #444; color: #888; cursor: not-allowed; }
+
+    #reader-content {
+      font-size: 1.2rem;
+      line-height: 1.8;
+      font-family: 'Georgia', serif;
+      color: #ddd;
+      padding: 10px;
+    }
+    
+    #reader-content img { max-width: 100%; height: auto; display: block; margin: 10px auto; }
+    #reader-content p { margin-bottom: 1.2em; }
+
+    /* Utility */
+    .loader-container {
+      position: fixed; top:0; left:0; width:100%; height:100%;
+      background: rgba(0,0,0,0.8);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 200;
+      flex-direction: column;
+    }
+    .spinner {
+      width: 50px; height: 50px;
+      border: 5px solid #333;
+      border-top: 5px solid var(--primary-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 10px;
+    }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+
+    .error { 
+        color: #cf6679; text-align: center; margin-top: 20px; padding: 20px; 
+        background: rgba(207, 102, 121, 0.1); border-radius: var(--radius);
+    }
+    .tag { 
+      display: inline-block; background: #333; color: #bbb;
+      padding: 2px 8px; border-radius: 4px; 
+      font-size: 0.75rem; margin-right: 5px; margin-bottom: 5px;
+      text-decoration: none;
+    }
+    .source-badge {
+        position: absolute; top: 5px; right: 5px;
+        padding: 2px 6px; font-size: 0.7rem; border-radius: 4px;
+        color: white; font-weight: bold; text-transform: uppercase;
+    }
+    .badge-central { background: #d32f2f; }
+    .badge-illusia { background: #1976d2; }
+    .badge-mania { background: #388e3c; }
+    .section-title { margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 5px; margin-top: 20px; }
+
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1 onclick="app.goHome()">📖 UniNovel</h1>
+    <div class="search-bar">
+      <input type="text" id="search-input" placeholder="Search novels...">
+      <button class="btn-search" onclick="app.search()">Search</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="view-home" class="view active">
+      <div id="history-section" style="display: none;">
+          <h2 class="section-title">Continue Reading</h2>
+          <div id="history-list" class="novel-grid"></div>
+      </div>
+
+      <h2 id="home-title" class="section-title">New Releases</h2>
+      <div id="novel-list" class="novel-grid"></div>
+    </div>
+
+    <div id="view-details" class="view">
+      <button class="btn-nav" onclick="app.goBack()" style="margin-bottom: 15px; background: #333; color: white;">← Back</button>
+      <div id="details-container"></div>
+    </div>
+
+    <div id="view-reader" class="view">
+      <div class="reader-container">
+          <div class="reader-controls">
+            <button class="btn-nav secondary" onclick="app.goBackToDetails()" title="Back to Novel">≡ List</button>
+            
+            <button id="btn-prev" class="btn-nav">Prev</button>
+            
+            <div style="text-align:center; flex:1; margin: 0 10px; overflow: hidden; min-width: 150px;">
+                <span id="reader-novel-title" style="display:block; font-size:0.8rem; color:#888;"></span>
+                <span id="reader-chapter-title" style="font-weight: bold; white-space: nowrap;"></span>
+            </div>
+            
+            <button id="btn-next" class="btn-nav">Next</button>
+          </div>
+          
+          <div id="reader-content"></div>
+          
+          <div class="reader-controls" style="margin-top: 20px; justify-content: center; gap: 20px;">
+            <button id="btn-prev-btm" class="btn-nav">Prev</button>
+            <button id="btn-next-btm" class="btn-nav">Next</button>
+          </div>
+      </div>
+    </div>
+
+    <div id="loader" class="loader-container" style="display: none;">
+        <div class="spinner"></div>
+        <div>Fetching Data...</div>
+    </div>
+  </main>
+
+  <script>
+    // ==========================================================
+    // SERVICE: NovelApiService (Integrated)
+    // ==========================================================
+    class NovelApiService {
+      constructor() {
+        this.proxy = "https://corsproxy.io/?url=";
+      }
+
+      async _fetch(url, options = {}) {
+        const targetUrl = this.proxy + encodeURIComponent(url);
+        const res = await fetch(targetUrl, {
+          method: options.method || "GET",
+          headers: options.headers || {},
+          body: options.body || null,
+        });
+        const text = await res.text();
+        return new DOMParser().parseFromString(text, "text/html");
+      }
+
+      _safeText(el, fallback = "") { return el ? el.textContent.trim() : fallback; }
+      _safeAttr(el, attr, fallback = "") { return el?.getAttribute(attr) ?? fallback; }
+      _safeHTML(el, fallback = "") { return el?.innerHTML.trim() ?? fallback; }
+
+      async searchAll(text) {
+        const [central, illusia, mania] = await Promise.all([
+          this._centralSearch(text).catch(e => []),
+          this._illusiaSearch(text).catch(e => []),
+          this._maniaSearch(text).catch(e => []),
+        ]);
+        return [...central, ...illusia, ...mania];
+      }
+
+      async getNovelInfoAll(novelId) {
+        const [source, ...idParts] = novelId.split("-");
+        const id = idParts.join("-");
+        switch (source) {
+          case "central": return this._centralGetNovelInfo(id);
+          case "illusia": return this._illusiaGetNovelInfo(id);
+          case "mania":   return this._maniaGetNovelInfo(id);
+          default: throw new Error("Unknown novel source");
+        }
+      }
+
+      async getChapterAll(novelId, chapterId) {
+        const info = await this.getNovelInfoAll(novelId);
+        const [source, ...idParts] = novelId.split("-");
+        const id = idParts.join("-");
+
+        const chapter = await (() => {
+          switch (source) {
+            case "central": return this._centralGetChapter(chapterId);
+            case "illusia": return this._illusiaGetChapter(id, chapterId);
+            case "mania":   return this._maniaGetChapter(id, chapterId);
+          }
+        })();
+
+        const list = info.chapters;
+        const index = list.findIndex(c => c[1] === chapterId);
+
+        let nextChap = null;
+        let prevChap = null;
+
+        if (index !== -1) {
+            // Assumes Descending list
+            if (index > 0) nextChap = list[index - 1][1]; 
+            if (index < list.length - 1) prevChap = list[index + 1][1];
+        }
+
+        return {
+          title: chapter.title,
+          subtitle: chapter.subtitle,
+          content: chapter.content,
+          novelTitle: info.nome,
+          prevChapterId: prevChap, 
+          nextChapterId: nextChap 
+        };
+      }
+
+      async lancamentosAll() {
+        const [central, illusia, mania] = await Promise.all([
+          this._centralSearch(""),
+          this._illusiaLancamentos(),
+          this._maniaLancamentos(),
+        ]);
+        return [...central, ...illusia, ...mania];
+      }
+
+      // --- CentralNovel ---
+      async _centralGetNovelInfo(slug) {
+        const doc = await this._fetch(`https://centralnovel.com/series/${slug}/`);
+        const name = this._safeText(doc.querySelector("h1[itemprop=name]"));
+        const desc = this._safeText(doc.querySelector(".entry-content"));
+        const cover = this._safeAttr(doc.querySelector("div.thumb img"), "src");
+        const lista = [...doc.querySelectorAll(".eplister a")];
+        const filtered = lista.filter((_, idx) => idx % 2 === 0); 
+        const chapters = filtered.map(a => {
+          const divs = [...a.querySelectorAll("div")];
+          const text = divs.slice(0, 2).map(d => this._safeText(d)).join(" - ");
+          const href = this._safeAttr(a, "href").split("/").filter(Boolean).pop();
+          return [text, href];
+        });
+        const genres = [...doc.querySelectorAll(".genxed a")].map(a => {
+          const href = this._safeAttr(a, "href").split("/").filter(Boolean).pop();
+          return [href, this._safeText(a)];
+        });
+        return { nome: name, desc, cover, chapters, genres };
+      }
+      async _centralGetChapter(chapter) {
+        const doc = await this._fetch(`https://centralnovel.com/${chapter}/`);
+        return {
+          title: this._safeText(doc.querySelector("h1.entry-title")),
+          subtitle: this._safeText(doc.querySelector("div.cat-series")),
+          content: this._safeHTML(doc.querySelector("div.epcontent.entry-content"))
+        };
+      }
+      async _centralSearch(text) {
+        try {
+          const body = new URLSearchParams({ action: "ts_ac_do_search", ts_ac_query: text });
+          const res = await fetch(this.proxy + encodeURIComponent("https://centralnovel.com/wp-admin/admin-ajax.php"), {
+            method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body
+          });
+          const json = await res.json().catch(() => null);
+          if (!json || !json.series || !json.series[0]) return [];
+          return json.series[0].all.map(a => {
+            const link = a.post_link || "";
+            const slug = link.split("/").filter(Boolean).pop();
+            if (!slug) return null;
+            return { nome: a.post_title || "Sem Título", url: `central-${slug}`, cover: a.post_image || "", source: 'central' };
+          }).filter(Boolean);
+        } catch { return []; }
+      }
+
+      // --- Illusia ---
+      async _illusiaLancamentos() {
+        try {
+          const doc = await this._fetch("https://illusia.com.br/lancamentos/");
+          return [...doc.querySelectorAll("li._latest-updates")].map(novel => {
+            const a = novel.querySelector("a");
+            const img = novel.querySelector("img");
+            const slug = this._safeAttr(a, "href").split("/").filter(Boolean).pop();
+            return { url: `illusia-${slug}`, nome: this._safeAttr(a, "title"), cover: this._safeAttr(img, "src"), source: 'illusia' };
+          });
+        } catch { return []; }
+      }
+      async _illusiaGetNovelInfo(slug) {
+        const doc = await this._fetch(`https://illusia.com.br/story/${slug}/`);
+        const name = this._safeText(doc.querySelector(".story__identity-title")).replace(/\n/g, " ");
+        const desc = [...doc.querySelectorAll("section.story__summary p")].map(p => this._safeText(p)).join("\n");
+        const cover = this._safeAttr(doc.querySelector(".webfeedsFeaturedVisual"), "src");
+        const chapters = [...doc.querySelectorAll(".chapter-group__list a")].map(a => {
+          const href = this._safeAttr(a, "href").split("/").filter(Boolean).pop();
+          return [this._safeText(a), href];
+        });
+        const genres = [...doc.querySelectorAll("._taxonomy-genre")].map(a => {
+          const href = this._safeAttr(a, "href").split("/").filter(Boolean).pop();
+          return [href, this._safeText(a)];
+        });
+        return { nome: name, desc, cover, chapters, genres };
+      }
+      async _illusiaGetChapter(novel, chapter) {
+        const doc = await this._fetch(`https://illusia.com.br/story/${novel}/${chapter}/`);
+        return {
+          title: this._safeText(doc.querySelector(".chapter__story-link")).replace(/\n/g, " "),
+          subtitle: this._safeText(doc.querySelector(".chapter__title")).replace(/\n/g, " "),
+          content: this._safeHTML(doc.querySelector("#chapter-content"))
+        };
+      }
+      async _illusiaSearch(text) {
+        try {
+          const doc = await this._fetch(`https://illusia.com.br/?s=${encodeURIComponent(text)}&post_type=fcn_story`, { method: "POST" });
+          return [...doc.querySelectorAll("li.card")].map(card => {
+            const link = card.querySelector("a");
+            const img = card.querySelector("img");
+            const slug = this._safeAttr(link, "href").split("/").filter(Boolean).pop();
+            return { nome: this._safeText(link), url: `illusia-${slug}`, cover: this._safeAttr(img, "src"), source: 'illusia' };
+          });
+        } catch { return []; }
+      }
+
+      // --- NovelMania ---
+      async _maniaLancamentos() {
+        try {
+          const doc = await this._fetch("https://novelmania.com.br");
+          return [...doc.querySelectorAll(".novels .col-6")].map(item => {
+            const a = item.querySelector("a");
+            const img = item.querySelector("img");
+            const h2 = item.querySelector("h2");
+            const slug = this._safeAttr(a, "href").split("/").filter(Boolean).pop();
+            return { url: `mania-${slug}`, nome: this._safeText(h2), cover: this._safeAttr(img, "src"), source: 'mania' };
+          });
+        } catch { return []; }
+      }
+      async _maniaGetNovelInfo(slug) {
+        const doc = await this._fetch(`https://novelmania.com.br/novels/${slug}/`);
+        const name = this._safeText(doc.querySelector("h1"));
+        const desc = [...doc.querySelectorAll("div.text p")].map(p => this._safeText(p)).join("\n");
+        const cover = this._safeAttr(doc.querySelector(".img-responsive"), "src");
+        const chapters = [...doc.querySelectorAll("ol.list-inline li a")].map(a => {
+          const href = this._safeAttr(a, "href").split("/").filter(Boolean).pop();
+          return [this._safeText(a.querySelector("strong")), href];
+        });
+        const genres = [...doc.querySelectorAll(".list-tags a")].map(a => {
+          const href = this._safeAttr(a, "href").split("/").filter(Boolean).pop();
+          return [href, this._safeAttr(a, "title")];
+        });
+        return { nome: name, desc, cover, chapters, genres };
+      }
+      async _maniaGetChapter(novel, chapter) {
+        const doc = await this._fetch(`https://novelmania.com.br/novels/${novel}/capitulos/${chapter}`);
+        return {
+          title: this._safeText(doc.querySelector("h3.mb-0")),
+          subtitle: this._safeText(doc.querySelector("h2.mt-0")),
+          content: this._safeHTML(doc.querySelector("#chapter-content"))
+        };
+      }
+      async _maniaSearch(text) {
+        try {
+          const doc = await this._fetch(`https://novelmania.com.br/novels?titulo=${encodeURIComponent(text)}`);
+          return [...doc.querySelectorAll(".top-novels")].map(a => {
+            const link = a.querySelector("a");
+            const h5 = a.querySelector("h5");
+            const img = a.querySelector("img");
+            const slug = this._safeAttr(link, "href").split("/").filter(Boolean).pop();
+            return { nome: this._safeText(h5), url: `mania-${slug}`, cover: this._safeAttr(img, "src"), source: 'mania' };
+          });
+        } catch { return []; }
+      }
+    }
+
+    // ==========================================================
+    // APP CONTROLLER
+    // ==========================================================
+    class App {
+      constructor() {
+        this.api = new NovelApiService();
+        this.currentNovelId = null;
+        this.currentNovelInfo = null; // Caching for history
+        
+        this.views = {
+          home: document.getElementById('view-home'),
+          details: document.getElementById('view-details'),
+          reader: document.getElementById('view-reader')
+        };
+        this.loader = document.getElementById('loader');
+        
+        // Load History
+        this.history = JSON.parse(localStorage.getItem('uninovel_history') || '[]');
+
+        document.getElementById('search-input').addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') this.search();
+        });
+
+        this.loadReleases();
+      }
+
+      showView(name) {
+        Object.values(this.views).forEach(el => el.classList.remove('active'));
+        this.views[name].classList.add('active');
+        window.scrollTo(0, 0);
+      }
+
+      toggleLoader(show) {
+        this.loader.style.display = show ? 'flex' : 'none';
+      }
+
+      goBack() {
+        this.showView('home');
+        this.renderHistory(); // Refresh history view
+      }
+
+      goBackToDetails() {
+          if (this.currentNovelId) {
+              this.showView('details');
+          } else {
+              this.goHome();
+          }
+      }
+
+      goHome() {
+        document.getElementById('search-input').value = '';
+        document.getElementById('home-title').innerText = 'New Releases';
+        this.loadReleases();
+      }
+
+      async loadReleases() {
+        this.showView('home');
+        this.renderHistory(); // Show history on load
+        document.getElementById('novel-list').innerHTML = '';
+        this.toggleLoader(true);
+
+        try {
+          const novels = await this.api.lancamentosAll();
+          this.renderGrid(novels, 'novel-list');
+        } catch (e) {
+          console.error(e);
+          document.getElementById('novel-list').innerHTML = `<div class="error">Network Error.</div>`;
+        } finally {
+          this.toggleLoader(false);
+        }
+      }
+
+      async search() {
+        const query = document.getElementById('search-input').value;
+        if (!query) return;
+        this.showView('home');
+        document.getElementById('home-title').innerText = `Search: "${query}"`;
+        document.getElementById('novel-list').innerHTML = '';
+        // Hide history during search to reduce clutter
+        document.getElementById('history-section').style.display = 'none';
+        this.toggleLoader(true);
+        try {
+          const novels = await this.api.searchAll(query);
+          this.renderGrid(novels, 'novel-list');
+        } catch (e) { console.error(e); } finally { this.toggleLoader(false); }
+      }
+
+      renderGrid(novels, containerId) {
+        const container = document.getElementById(containerId);
+        const unique = novels.filter((v,i,a)=>a.findIndex(t=>(t.url===v.url))===i);
+        
+        if (unique.length === 0) {
+            container.innerHTML = '<div style="padding:20px; color:#888">No results found.</div>';
+            return;
+        }
+
+        container.innerHTML = unique.map(novel => `
+          <div class="novel-card" onclick="app.openNovel('${novel.url}')">
+            <span class="source-badge badge-${novel.source}">${novel.source}</span>
+            <img src="${novel.cover}" loading="lazy" onerror="this.src='https://via.placeholder.com/150?text=No+Cover'">
+            <h3>${novel.nome}</h3>
+          </div>
+        `).join('');
+      }
+
+      renderHistory() {
+        const container = document.getElementById('history-list');
+        const section = document.getElementById('history-section');
+        
+        if (this.history.length === 0) {
+            section.style.display = 'none';
+            return;
+        }
+        
+        section.style.display = 'block';
+        container.innerHTML = this.history.map(item => `
+          <div class="novel-card" onclick="app.openNovel('${item.id}')">
+            <span class="source-badge badge-${item.source}">${item.source}</span>
+            <img src="${item.cover}" loading="lazy" onerror="this.src='https://via.placeholder.com/150?text=No+Cover'">
+            <h3>${item.title}</h3>
+            <div class="history-badge">Last: ${item.chapterTitle}</div>
+          </div>
+        `).join('');
+      }
+
+      async openNovel(id) {
+        this.currentNovelId = id;
+        this.showView('details');
+        const container = document.getElementById('details-container');
+        container.innerHTML = '';
+        this.toggleLoader(true);
+
+        try {
+          const info = await this.api.getNovelInfoAll(id);
+          this.currentNovelInfo = info; // Cache for history use
+          
+          const genresHtml = info.genres ? info.genres.map(g => `<span class="tag">${g[1]}</span>`).join('') : '';
+          const chaptersHtml = info.chapters.map(c => `
+            <div class="chapter-item" onclick="app.readChapter('${id}', '${c[1]}')">
+              ${c[0]}
+            </div>
+          `).join('');
+
+          container.innerHTML = `
+            <div class="details-header">
+              <img class="details-cover" src="${info.cover}" onerror="this.src='https://via.placeholder.com/150'">
+              <div class="details-info">
+                <h2>${info.nome}</h2>
+                <div style="margin-bottom:10px">${genresHtml}</div>
+                <div class="desc">${info.desc || 'No description available.'}</div>
+              </div>
+            </div>
+            <h3 style="margin-bottom:10px;">Chapters (${info.chapters.length})</h3>
+            <div class="chapter-list">
+              ${chaptersHtml}
+            </div>
+          `;
+        } catch (e) {
+          container.innerHTML = `<div class="error">Failed to load novel info.</div>`;
+          console.error(e);
+        } finally {
+          this.toggleLoader(false);
+        }
+      }
+
+      async readChapter(novelId, chapterId) {
+        this.showView('reader');
+        const contentDiv = document.getElementById('reader-content');
+        const titleSpan = document.getElementById('reader-chapter-title');
+        const novelTitleSpan = document.getElementById('reader-novel-title');
+        
+        contentDiv.innerHTML = '';
+        titleSpan.innerText = 'Loading...';
+        novelTitleSpan.innerText = '';
+        this.toggleLoader(true);
+        window.scrollTo(0,0);
+
+        try {
+          const data = await this.api.getChapterAll(novelId, chapterId);
+          
+          novelTitleSpan.innerText = data.novelTitle;
+          titleSpan.innerText = data.title;
+          
+          contentDiv.innerHTML = `
+            <h2 style="margin-bottom:10px">${data.title}</h2>
+            <h4 style="margin-bottom:20px; color:#888">${data.subtitle || ''}</h4>
+            <hr style="border-color:#333; margin-bottom:20px">
+            ${data.content}
+          `;
+
+          // Update History
+          this.updateHistory(novelId, chapterId, data.title);
+
+          // Navigation Logic
+          const setupBtn = (id1, id2, targetId, label) => {
+            const el1 = document.getElementById(id1);
+            const el2 = document.getElementById(id2);
+            el1.innerText = label;
+            el2.innerText = label;
+            if (targetId) {
+              el1.disabled = false;
+              el2.disabled = false;
+              const fn = () => this.readChapter(novelId, targetId);
+              el1.onclick = fn;
+              el2.onclick = fn;
+            } else {
+              el1.disabled = true;
+              el2.disabled = true;
+              el1.onclick = null;
+              el2.onclick = null;
+            }
+          };
+
+          setupBtn('btn-prev', 'btn-prev-btm', data.nextChapterId, "Prev"); 
+          setupBtn('btn-next', 'btn-next-btm', data.prevChapterId, "Next");
+
+        } catch (e) {
+          contentDiv.innerHTML = `<div class="error">Failed to load chapter.</div>`;
+          console.error(e);
+        } finally {
+          this.toggleLoader(false);
+        }
+      }
+
+      updateHistory(novelId, chapterId, chapterTitle) {
+          // Ensure we have novel details cached
+          if (!this.currentNovelInfo) return;
+
+          const entry = {
+              id: novelId,
+              title: this.currentNovelInfo.nome,
+              cover: this.currentNovelInfo.cover,
+              chapterId: chapterId,
+              chapterTitle: chapterTitle,
+              source: novelId.split('-')[0],
+              timestamp: Date.now()
+          };
+
+          // Remove if exists (to push to top)
+          this.history = this.history.filter(h => h.id !== novelId);
+          
+          // Add to top
+          this.history.unshift(entry);
+          
+          // Limit to 20 items
+          if (this.history.length > 20) this.history.pop();
+
+          localStorage.setItem('uninovel_history', JSON.stringify(this.history));
+      }
+    }
+
+    window.app = new App();
+  </script>
+</body>
+</html>
