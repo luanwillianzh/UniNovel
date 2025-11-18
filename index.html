@@ -350,11 +350,11 @@
     // ==========================================================
     class NovelApiService {
       constructor() {
-        this.proxy = "https://corsproxy.io/?url=";
+        this.proxy = "http://the-fool.site:8000/";
       }
 
       async _fetch(url, options = {}) {
-        const targetUrl = this.proxy + encodeURIComponent(url);
+        const targetUrl = this.proxy + url;
         const res = await fetch(targetUrl, {
           method: options.method || "GET",
           headers: options.headers || {},
@@ -439,7 +439,8 @@
         const cover = this._safeAttr(doc.querySelector("div.thumb img"), "src");
         const lista = [...doc.querySelectorAll(".eplister a")];
         const filtered = lista.filter((_, idx) => idx % 2 === 0); 
-        const chapters = filtered.map(a => {
+        const reversed = filtered.reverse();
+        const chapters = reversed.map(a => {
           const divs = [...a.querySelectorAll("div")];
           const text = divs.slice(0, 2).map(d => this._safeText(d)).join(" - ");
           const href = this._safeAttr(a, "href").split("/").filter(Boolean).pop();
@@ -462,7 +463,7 @@
       async _centralSearch(text) {
         try {
           const body = new URLSearchParams({ action: "ts_ac_do_search", ts_ac_query: text });
-          const res = await fetch(this.proxy + encodeURIComponent("https://centralnovel.com/wp-admin/admin-ajax.php"), {
+          const res = await fetch(this.proxy + "https://centralnovel.com/wp-admin/admin-ajax.php", {
             method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body
           });
           const json = await res.json().catch(() => null);
