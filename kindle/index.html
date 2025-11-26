@@ -1,358 +1,357 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Kindle Reader</title>
-<style>
-  /* RESET BÁSICO E ALTO CONTRASTE */
-  body {
-    background-color: #ffffff;
-    color: #000000;
-    font-family: 'Georgia', 'Times New Roman', serif; /* Serifado é melhor para e-ink */
-    font-size: 18px; /* Fonte base maior */
-    line-height: 1.5;
-    margin: 0;
-    padding: 10px;
-  }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kindle Reader (Legacy)</title>
+    <style>
+        /* CSS BÁSICO E SEGURO */
+        body { background: white; color: black; font-family: Georgia, serif; font-size: 120%; margin: 0; padding: 5px; }
+        
+        /* Layout em Bloco (Evita Flexbox que trava Kindle antigo) */
+        .container { max-width: 100%; margin: 0 auto; }
+        
+        button {
+            display: block; width: 100%; padding: 15px 0; margin-bottom: 10px;
+            background: white; border: 3px solid black; color: black;
+            font-size: 18px; font-weight: bold; cursor: pointer; text-transform: uppercase;
+        }
+        button:hover { background: black; color: white; }
 
-  h1, h2, h3 { margin: 10px 0; color: #000; font-weight: bold; }
-  hr { border: 0; border-top: 2px solid #000; margin: 20px 0; }
-  a { text-decoration: none; color: #000; }
+        input[type="text"] {
+            width: 95%; padding: 10px; font-size: 18px;
+            border: 2px solid black; margin-bottom: 10px;
+        }
 
-  /* BOTÕES GRANDES E CLAROS (Bordas pretas puras) */
-  button, .btn {
-    background: #fff;
-    color: #000;
-    border: 3px solid #000;
-    padding: 12px 5px;
-    font-size: 18px;
-    font-weight: bold;
-    cursor: pointer;
-    width: 100%;
-    display: block;
-    margin-bottom: 15px;
-    box-sizing: border-box;
-    text-align: center;
-    font-family: sans-serif; /* Botões em sans-serif para contraste com texto */
-  }
-  
-  button:active { background: #000; color: #fff; } /* Feedback visual simples */
-  button:disabled { border-color: #999; color: #999; }
+        .novel-item { border-bottom: 1px solid black; padding: 10px 0; }
+        .novel-title { font-weight: bold; font-size: 1.1em; }
+        .source { font-size: 0.8em; background: #eee; padding: 2px; }
 
-  /* CAMPOS DE BUSCA */
-  input[type="text"] {
-    width: 100%;
-    padding: 12px;
-    font-size: 18px;
-    border: 2px solid #000;
-    margin-bottom: 10px;
-    box-sizing: border-box;
-  }
-
-  /* LISTAS */
-  .list-item {
-    border-bottom: 1px solid #000;
-    padding: 15px 0;
-    display: block;
-  }
-  .source-tag { font-size: 0.8em; text-transform: uppercase; font-weight: bold; }
-
-  /* LEITOR - Removendo imagens para performance */
-  #reader-content img { display: none !important; } /* Imagens travam o Kindle */
-  #reader-content p { margin-bottom: 1em; text-align: justify; }
-
-  /* UTILITÁRIOS */
-  .hidden { display: none; }
-  .error { border: 2px solid black; padding: 10px; font-weight: bold; }
-  #loading { font-weight: bold; font-size: 20px; text-align: center; padding: 20px; display: none; }
-
-</style>
+        .hidden { display: none; }
+        #loader { padding: 20px; text-align: center; font-weight: bold; border: 2px dashed black; display: none; }
+        
+        /* Leitura */
+        #reader-text { text-align: justify; line-height: 1.5; }
+        #reader-text p { margin-bottom: 1em; }
+        #reader-text img { display: none; } /* Remove imagens para não travar */
+        
+        /* Navegação do Leitor */
+        .nav-btns { margin-top: 20px; text-align: center; }
+        .nav-btns button { width: 48%; display: inline-block; }
+    </style>
 </head>
 <body>
 
-  <div id="nav-top">
-    <button onclick="app.goHome()">🏠 INÍCIO / HISTÓRICO</button>
-    <div id="search-box">
-      <input type="text" id="search-input" placeholder="Digite o nome da novel...">
-      <button onclick="app.search()">BUSCAR</button>
-    </div>
-  </div>
-
-  <div id="loading">CARREGANDO...</div>
-
-  <hr>
-
-  <main id="main-content">
-    
-    <div id="view-list">
-      <h2 id="list-title">Histórico</h2>
-      <div id="list-container"></div>
+<div class="container">
+    <div id="menu">
+        <button onclick="App.goHome()">INÍCIO / HISTÓRICO</button>
+        <input type="text" id="search-input" placeholder="Nome da Novel...">
+        <button onclick="App.search()">BUSCAR</button>
     </div>
 
-    <div id="view-details" class="hidden">
-      <h2 id="novel-title"></h2>
-      <p id="novel-desc" style="font-size: 0.9em; font-style: italic;"></p>
-      <h3>Capítulos:</h3>
-      <div id="chapter-list"></div>
+    <div id="loader">CARREGANDO... AGUARDE</div>
+
+    <div id="view-list" class="view">
+        <h2 id="list-header">Histórico</h2>
+        <div id="list-content"></div>
     </div>
 
-    <div id="view-reader" class="hidden">
-      <button onclick="app.goBackToDetails()">≡ VOLTAR PARA LISTA</button>
-      <div style="display:flex; gap:5px;">
-        <button id="btn-prev-top">ANTERIOR</button>
-        <button id="btn-next-top">PRÓXIMO</button>
-      </div>
-      
-      <h2 id="read-title" style="text-align:center; margin-top:20px;"></h2>
-      <hr>
-      <div id="reader-content"></div>
-      <hr>
-      
-      <div style="display:flex; gap:5px; margin-top:20px;">
-        <button id="btn-prev-btm">ANTERIOR</button>
-        <button id="btn-next-btm">PRÓXIMO</button>
-      </div>
-      <br><br><br> </div>
+    <div id="view-details" class="view hidden">
+        <h2 id="det-title"></h2>
+        <div id="det-chapters"></div>
+    </div>
 
-  </main>
+    <div id="view-reader" class="view hidden">
+        <button onclick="App.backToDetails()">VOLTAR PARA CAPÍTULOS</button>
+        <h3 id="chap-title" style="text-align:center"></h3>
+        <hr>
+        <div id="reader-text"></div>
+        <div class="nav-btns">
+            <button id="btn-prev" onclick="App.prevChap()">ANTERIOR</button>
+            <button id="btn-next" onclick="App.nextChap()">PRÓXIMO</button>
+        </div>
+        <div style="height: 50px;"></div>
+    </div>
+</div>
 
-  <script>
-    // ================= SERVIÇO (MANTIDO IGUAL, APENAS LÓGICA) =================
-    class NovelApiService {
-      constructor() { this.proxy = "https://relaxed-churros-9a35ea.netlify.app/?destination="; }
-      async _fetch(url, opt={}) {
-        try {
-          const res = await fetch(this.proxy + url, { method: opt.method||"GET", headers: opt.headers||{}, body: opt.body||null });
-          const text = await res.text();
-          return new DOMParser().parseFromString(text, "text/html");
-        } catch(e) { throw e; }
-      }
-      _safeText(el) { return el ? el.textContent.trim() : ""; }
-      _safeAttr(el, a) { return el ? el.getAttribute(a) : ""; }
-      _safeHTML(el) { return el ? el.innerHTML : ""; }
+<script>
+    // =========================================================
+    // UTILITÁRIOS (Compatível com IE8/Kindle Antigo)
+    // =========================================================
+    var PROXY = "https://relaxed-churros-9a35ea.netlify.app/?destination=";
 
-      // Scrapers simplificados para performance (apenas o essencial)
-      async searchAll(text) {
-        const p = [this._centralSearch(text), this._illusiaSearch(text), this._maniaSearch(text)];
-        const r = await Promise.allSettled(p);
-        return r.map(i => i.status === 'fulfilled' ? i.value : []).flat();
-      }
-      async getNovelInfo(id) {
-        const [src, ...rest] = id.split("-"); const slug = rest.join("-");
-        if(src==='central') return this._centralInfo(slug);
-        if(src==='illusia') return this._illusiaInfo(slug);
-        if(src==='mania') return this._maniaInfo(slug);
-      }
-      async getChapter(nid, cid) {
-        const [src, ...rest] = nid.split("-"); const slug = rest.join("-");
-        if(src==='central') return this._centralChap(cid);
-        if(src==='illusia') return this._illusiaChap(slug, cid);
-        if(src==='mania') return this._maniaChap(slug, cid);
-      }
-
-      // --- CENTRAL NOVEL ---
-      async _centralSearch(q) {
-        const body = new URLSearchParams({ action: "ts_ac_do_search", ts_ac_query: q });
-        const res = await fetch(this.proxy + "https://centralnovel.com/wp-admin/admin-ajax.php", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body });
-        const json = await res.json();
-        if (!json?.series?.[0]) return [];
-        return json.series[0].all.map(a => ({ nome: a.post_title, id: `central-${a.post_link.split("/").filter(Boolean).pop()}`, source: 'CEN' }));
-      }
-      async _centralInfo(slug) {
-        const doc = await this._fetch(`https://centralnovel.com/series/${slug}/`);
-        const chaps = [...doc.querySelectorAll(".eplister a")].filter((_,i)=>i%2===0).reverse().map(a => [this._safeText(a.querySelector(".epl-num")), a.getAttribute("href").split("/").filter(Boolean).pop()]);
-        return { nome: this._safeText(doc.querySelector("h1")), desc: this._safeText(doc.querySelector(".entry-content")), chapters: chaps };
-      }
-      async _centralChap(slug) {
-        const doc = await this._fetch(`https://centralnovel.com/${slug}/`);
-        return { title: this._safeText(doc.querySelector("h1")), content: this._safeHTML(doc.querySelector(".epcontent")) };
-      }
-
-      // --- ILLUSIA ---
-      async _illusiaSearch(q) {
-        const doc = await this._fetch(`https://illusia.com.br/?s=${encodeURIComponent(q)}&post_type=fcn_story`, { method:"POST" });
-        return [...doc.querySelectorAll("li.card a")].map(a => ({ nome: a.textContent.trim(), id: `illusia-${a.getAttribute("href").split("/").filter(Boolean).pop()}`, source: 'ILL' }));
-      }
-      async _illusiaInfo(slug) {
-        const doc = await this._fetch(`https://illusia.com.br/story/${slug}/`);
-        const chaps = [...doc.querySelectorAll(".chapter-group__list a")].map(a => [a.textContent.trim(), a.getAttribute("href").split("/").filter(Boolean).pop()]);
-        return { nome: this._safeText(doc.querySelector(".story__identity-title")), desc: "", chapters: chaps };
-      }
-      async _illusiaChap(slug, chap) {
-        const doc = await this._fetch(`https://illusia.com.br/story/${slug}/${chap}/`);
-        return { title: this._safeText(doc.querySelector(".chapter__title")), content: this._safeHTML(doc.querySelector("#chapter-content")) };
-      }
-
-      // --- NOVEL MANIA ---
-      async _maniaSearch(q) {
-        const doc = await this._fetch(`https://novelmania.com.br/novels?titulo=${encodeURIComponent(q)}`);
-        return [...doc.querySelectorAll(".top-novels h5")].map(h => {
-           const a = h.closest('a') || h.parentElement.querySelector('a');
-           return { nome: h.textContent.trim(), id: `mania-${a.getAttribute("href").split("/").filter(Boolean).pop()}`, source: 'MAN' };
-        });
-      }
-      async _maniaInfo(slug) {
-        const doc = await this._fetch(`https://novelmania.com.br/novels/${slug}/`);
-        const chaps = [...doc.querySelectorAll("ol.list-inline li a")].map(a => [a.querySelector("strong").textContent, a.getAttribute("href").split("/").filter(Boolean).pop()]);
-        return { nome: this._safeText(doc.querySelector("h1")), desc: "", chapters: chaps };
-      }
-      async _maniaChap(slug, chap) {
-        const doc = await this._fetch(`https://novelmania.com.br/novels/${slug}/capitulos/${chap}`);
-        return { title: this._safeText(doc.querySelector("h2")), content: this._safeHTML(doc.querySelector("#chapter-content")) };
-      }
+    // Substituto do fetch (AJAX Clássico)
+    function httpRequest(url, method, data, callback) {
+        var xhr = new XMLHttpRequest();
+        xhr.open(method, PROXY + url, true);
+        if (method === "POST") {
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        }
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    callback(null, xhr.responseText);
+                } else {
+                    callback("Erro: " + xhr.status);
+                }
+            }
+        };
+        xhr.onerror = function() { callback("Erro de Conexão"); };
+        xhr.send(data);
     }
 
-    // ================= APP LÓGICA =================
-    class App {
-      constructor() {
-        this.api = new NovelApiService();
-        this.history = JSON.parse(localStorage.getItem('kindle_hist') || '[]');
-        this.currentNovel = null;
-        this.renderHistory();
-      }
-
-      // Utilitários de UI
-      loading(show) { document.getElementById('loading').style.display = show ? 'block' : 'none'; }
-      hideAll() { ['view-list', 'view-details', 'view-reader'].forEach(id => document.getElementById(id).classList.add('hidden')); window.scrollTo(0,0); }
-      
-      goHome() {
-        this.hideAll();
-        document.getElementById('view-list').classList.remove('hidden');
-        document.getElementById('list-title').innerText = "Histórico de Leitura";
-        document.getElementById('search-input').value = "";
-        this.renderHistory();
-      }
-
-      renderHistory() {
-        const c = document.getElementById('list-container');
-        if(!this.history.length) { c.innerHTML = "<p>Nenhum histórico.</p>"; return; }
-        c.innerHTML = this.history.map(h => `
-          <div class="list-item">
-            <div class="source-tag">[${h.source}]</div>
-            <div style="font-weight:bold; font-size:1.1em">${h.name}</div>
-            <div style="color:#555">Último: ${h.chapName || '---'}</div>
-            <button style="margin-top:10px" onclick="app.read('${h.nid}', '${h.cid}')">CONTINUAR LENDO</button>
-            <button style="margin-top:5px; border:1px solid #ccc" onclick="app.loadNovel('${h.nid}')">VER CAPÍTULOS</button>
-          </div>
-        `).join('');
-      }
-
-      async search() {
-        const q = document.getElementById('search-input').value;
-        if(!q) return;
-        this.hideAll();
-        document.getElementById('view-list').classList.remove('hidden');
-        document.getElementById('list-title').innerText = "Resultados: " + q;
-        document.getElementById('list-container').innerHTML = "";
-        this.loading(true);
-        try {
-          const list = await this.api.searchAll(q);
-          document.getElementById('list-container').innerHTML = list.map(n => `
-            <div class="list-item">
-               <span class="source-tag">[${n.source}]</span> <b>${n.nome}</b>
-               <button style="margin-top:10px" onclick="app.loadNovel('${n.id}')">ABRIR</button>
-            </div>
-          `).join('');
-          if(!list.length) document.getElementById('list-container').innerHTML = "<p>Nada encontrado.</p>";
-        } catch(e) { document.getElementById('list-container').innerHTML = `<p class="error">Erro: ${e.message}</p>`; }
-        this.loading(false);
-      }
-
-      async loadNovel(id) {
-        this.hideAll();
-        this.loading(true);
-        try {
-          const info = await this.api.getNovelInfo(id);
-          this.currentNovel = { ...info, id };
-          
-          document.getElementById('novel-title').innerText = info.nome;
-          document.getElementById('novel-desc').innerText = info.desc.substring(0, 300) + "...";
-          
-          // Renderiza capítulos como botões grandes para toque fácil
-          document.getElementById('chapter-list').innerHTML = info.chapters.map(c => `
-            <button style="text-align:left; font-size:16px; font-weight:normal" onclick="app.read('${id}', '${c[1]}')">
-              ${c[0]}
-            </button>
-          `).join('');
-
-          document.getElementById('view-details').classList.remove('hidden');
-        } catch(e) { alert("Erro ao carregar novel"); this.goHome(); }
-        this.loading(false);
-      }
-
-      async read(nid, cid) {
-        this.hideAll();
-        this.loading(true);
-        document.getElementById('read-title').innerText = "";
-        document.getElementById('reader-content').innerHTML = "";
-
-        try {
-          const data = await this.api.getChapter(nid, cid);
-          document.getElementById('view-reader').classList.remove('hidden');
-          
-          // Update Content
-          document.getElementById('read-title').innerText = data.title;
-          document.getElementById('reader-content').innerHTML = data.content;
-
-          // Encontra Prev/Next baseados na lista carregada anteriormente ou lógica simples
-          // NOTA: Para simplificar no Kindle, precisamos ter carregado a novel antes ou confiar no histórico
-          // Aqui tentaremos achar na currentNovel. Se não tiver, desabilita botões temporariamente
-          let prev = null, next = null;
-          
-          if(this.currentNovel && this.currentNovel.id === nid) {
-             const idx = this.currentNovel.chapters.findIndex(c => c[1] == cid);
-             if(idx > 0) next = this.currentNovel.chapters[idx-1][1]; // Arrays geralmente são [novo...velho] ou [velho...novo]. Assumindo ordenação padrão de scrapers (desc)
-             if(idx < this.currentNovel.chapters.length-1) prev = this.currentNovel.chapters[idx+1][1];
-             
-             // Inversão comum em scrapers: se index 0 é o ultimo cap lançado, 'next' na leitura é index+1 se a lista for crescente.
-             // Vamos simplificar: A maioria das listas vem Recente -> Antigo.
-             // Então Next Chapter (história avança) é index-1. Prev Chapter é index+1.
-          }
-
-          const setupBtn = (bid1, bid2, target) => {
-             const el1 = document.getElementById(bid1);
-             const el2 = document.getElementById(bid2);
-             if(target) {
-               el1.disabled = false; el1.onclick = () => app.read(nid, target);
-               el2.disabled = false; el2.onclick = () => app.read(nid, target);
-             } else {
-               el1.disabled = true; el2.disabled = true;
-             }
-          };
-          
-          setupBtn('btn-prev-top', 'btn-prev-btm', prev);
-          setupBtn('btn-next-top', 'btn-next-btm', next);
-
-          // Salvar histórico
-          this.saveHistory(nid, this.currentNovel ? this.currentNovel.nome : "Novel", cid, data.title);
-
-        } catch(e) { 
-           document.getElementById('view-reader').innerHTML = `<p class="error">Erro ao carregar texto: ${e}</p>`;
-           document.getElementById('view-reader').classList.remove('hidden');
-        }
-        this.loading(false);
-      }
-
-      saveHistory(nid, name, cid, cname) {
-        let h = this.history.filter(x => x.nid !== nid);
-        h.unshift({ nid, name, cid, chapName: cname, source: nid.split('-')[0] });
-        if(h.length > 10) h.pop();
-        this.history = h;
-        localStorage.setItem('kindle_hist', JSON.stringify(h));
-      }
-
-      goBackToDetails() {
-        if(this.currentNovel) {
-           document.getElementById('view-reader').classList.add('hidden');
-           document.getElementById('view-details').classList.remove('hidden');
-        } else {
-           this.goHome();
-        }
-      }
+    function parseHTML(html) {
+        var div = document.createElement('div');
+        div.innerHTML = html;
+        return div;
     }
 
-    window.app = new App();
-  </script>
+    // =========================================================
+    // LÓGICA DA APLICAÇÃO
+    // =========================================================
+    var App = {
+        history: [],
+        currentNovel: null,
+        currentChapId: null,
+
+        init: function() {
+            try {
+                var h = localStorage.getItem('kindle_hist_v2');
+                if (h) this.history = JSON.parse(h);
+            } catch(e) {}
+            this.renderHistory();
+        },
+
+        toggleLoader: function(show) {
+            document.getElementById('loader').style.display = show ? 'block' : 'none';
+        },
+
+        showView: function(id) {
+            var views = ['view-list', 'view-details', 'view-reader'];
+            for (var i = 0; i < views.length; i++) {
+                document.getElementById(views[i]).style.display = 'none';
+            }
+            document.getElementById(id).style.display = 'block';
+            window.scrollTo(0, 0);
+        },
+
+        // --- NAVEGAÇÃO ---
+        goHome: function() {
+            this.showView('view-list');
+            this.renderHistory();
+            document.getElementById('list-header').innerHTML = "Histórico";
+            document.getElementById('search-input').value = "";
+        },
+
+        // --- BUSCA ---
+        search: function() {
+            var q = document.getElementById('search-input').value;
+            if (!q) return;
+
+            this.showView('view-list');
+            document.getElementById('list-header').innerHTML = "Buscando: " + q;
+            document.getElementById('list-content').innerHTML = "";
+            this.toggleLoader(true);
+
+            // Busca simplificada: Apenas CentralNovel para evitar timeout do Kindle
+            // Kindle não aguenta muitas requisições paralelas
+            var that = this;
+            var body = "action=ts_ac_do_search&ts_ac_query=" + encodeURIComponent(q);
+            
+            httpRequest("https://centralnovel.com/wp-admin/admin-ajax.php", "POST", body, function(err, text) {
+                that.toggleLoader(false);
+                if (err) {
+                    alert(err);
+                    return;
+                }
+                
+                try {
+                    var json = JSON.parse(text);
+                    if (!json.series || !json.series[0]) {
+                        document.getElementById('list-content').innerHTML = "Nada encontrado.";
+                        return;
+                    }
+                    
+                    var html = "";
+                    var list = json.series[0].all;
+                    for (var i = 0; i < list.length; i++) {
+                        var item = list[i];
+                        var linkParts = item.post_link.split('/');
+                        var slug = linkParts[linkParts.length - 2] || linkParts[linkParts.length - 1];
+                        var id = 'central-' + slug;
+                        
+                        html += '<div class="novel-item">';
+                        html += '<div class="novel-title">' + item.post_title + '</div>';
+                        html += '<button style="margin-top:5px" onclick="App.loadNovel(\'' + id + '\')">ABRIR</button>';
+                        html += '</div>';
+                    }
+                    document.getElementById('list-content').innerHTML = html;
+                } catch (e) {
+                    document.getElementById('list-content').innerHTML = "Erro ao processar dados.";
+                }
+            });
+        },
+
+        // --- CARREGAR NOVEL ---
+        loadNovel: function(id) {
+            this.showView('view-details');
+            document.getElementById('det-title').innerHTML = "Carregando...";
+            document.getElementById('det-chapters').innerHTML = "";
+            this.toggleLoader(true);
+
+            var slug = id.replace('central-', '');
+            var that = this;
+
+            httpRequest("https://centralnovel.com/series/" + slug + "/", "GET", null, function(err, text) {
+                that.toggleLoader(false);
+                if (err) { alert("Erro ao carregar novel"); that.goHome(); return; }
+
+                var doc = parseHTML(text);
+                var title = doc.querySelector("h1").textContent;
+                var links = doc.querySelectorAll(".eplister a");
+                var chapters = [];
+
+                // Filter logic for central novel (only even links usually)
+                for (var i = 0; i < links.length; i++) {
+                    // Logica simplificada: pegar todos os links que parecem caps
+                    var t = links[i].querySelector(".epl-num");
+                    if (t) {
+                        var href = links[i].getAttribute("href");
+                        var parts = href.split('/');
+                        var cSlug = parts[parts.length - 2] || parts[parts.length - 1];
+                        chapters.push({ title: t.textContent, id: cSlug });
+                    }
+                }
+                
+                // Salvar estado atual
+                that.currentNovel = { id: id, title: title, chapters: chapters };
+                
+                // Renderizar
+                document.getElementById('det-title').innerHTML = title;
+                var html = '';
+                // Inverter para ficar do cap 1 ao atual, se necessário, ou manter recente
+                // Geralmente sites mostram recente primeiro.
+                for (var j = 0; j < chapters.length; j++) {
+                    var c = chapters[j];
+                    html += '<button style="text-align:left; font-weight:normal" onclick="App.read(\'' + c.id + '\')">' + c.title + '</button>';
+                }
+                document.getElementById('det-chapters').innerHTML = html;
+            });
+        },
+
+        // --- LER CAPÍTULO ---
+        read: function(chapId) {
+            this.currentChapId = chapId;
+            this.showView('view-reader');
+            document.getElementById('reader-text').innerHTML = "";
+            document.getElementById('chap-title').innerHTML = "Carregando...";
+            this.toggleLoader(true);
+
+            var that = this;
+            httpRequest("https://centralnovel.com/" + chapId + "/", "GET", null, function(err, text) {
+                that.toggleLoader(false);
+                if (err) { document.getElementById('reader-text').innerHTML = "Erro ao carregar texto."; return; }
+
+                var doc = parseHTML(text);
+                var content = doc.querySelector(".epcontent");
+                var title = doc.querySelector("h1").textContent;
+
+                // Limpeza de scripts e estilos do conteudo
+                var scripts = content.getElementsByTagName('script');
+                while(scripts.length > 0){ scripts[0].parentNode.removeChild(scripts[0]); }
+
+                document.getElementById('chap-title').innerHTML = title;
+                document.getElementById('reader-text').innerHTML = content.innerHTML;
+
+                // Atualiza histórico
+                that.addToHistory(that.currentNovel.title, title, that.currentNovel.id, chapId);
+                window.scrollTo(0,0);
+            });
+        },
+
+        // --- CONTROLES DE LEITURA ---
+        nextChap: function() {
+            if (!this.currentNovel) return;
+            var idx = -1;
+            for(var i=0; i<this.currentNovel.chapters.length; i++) {
+                if(this.currentNovel.chapters[i].id === this.currentChapId) {
+                    idx = i; break;
+                }
+            }
+            // CentralNovel lista do mais novo para o mais velho (descrescente)
+            // Então "Próximo" (história avança) é o indice anterior no array (idx - 1)
+            // Se a lista estiver invertida, mude a logica.
+            if (idx > 0) {
+                this.read(this.currentNovel.chapters[idx - 1].id);
+            } else {
+                alert("Sem mais capítulos recentes na lista carregada.");
+            }
+        },
+
+        prevChap: function() {
+            if (!this.currentNovel) return;
+            var idx = -1;
+            for(var i=0; i<this.currentNovel.chapters.length; i++) {
+                if(this.currentNovel.chapters[i].id === this.currentChapId) {
+                    idx = i; break;
+                }
+            }
+            if (idx < this.currentNovel.chapters.length - 1) {
+                this.read(this.currentNovel.chapters[idx + 1].id);
+            } else {
+                alert("Este é o último capítulo disponível.");
+            }
+        },
+
+        backToDetails: function() {
+            this.showView('view-details');
+        },
+
+        // --- HISTÓRICO ---
+        addToHistory: function(novelName, chapName, novelId, chapId) {
+            // Remove duplicata
+            var newHist = [];
+            for(var i=0; i<this.history.length; i++) {
+                if(this.history[i].id !== novelId) newHist.push(this.history[i]);
+            }
+            newHist.unshift({
+                name: novelName,
+                lastChap: chapName,
+                id: novelId,
+                chapId: chapId
+            });
+            // Limita a 10 itens
+            if(newHist.length > 10) newHist.pop();
+            
+            this.history = newHist;
+            localStorage.setItem('kindle_hist_v2', JSON.stringify(this.history));
+        },
+
+        renderHistory: function() {
+            var el = document.getElementById('list-content');
+            if (this.history.length === 0) {
+                el.innerHTML = "<p>Nenhum histórico recente.</p>";
+                return;
+            }
+            var html = "";
+            for (var i = 0; i < this.history.length; i++) {
+                var h = this.history[i];
+                html += '<div class="novel-item">';
+                html += '<div class="novel-title">' + h.name + '</div>';
+                html += '<div class="source">Lido: ' + h.lastChap + '</div>';
+                html += '<button style="margin-top:5px" onclick="App.loadNovel(\'' + h.id + '\')">CAPÍTULOS</button>';
+                html += '<button style="margin-top:5px; border:1px solid #ccc" onclick="App.read(\'' + h.chapId + '\')">CONTINUAR</button>';
+                html += '</div>';
+            }
+            el.innerHTML = html;
+        }
+    };
+
+    // Inicializa
+    window.onload = function() {
+        App.init();
+    };
+
+</script>
 </body>
 </html>
