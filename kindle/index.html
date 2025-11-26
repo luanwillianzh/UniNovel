@@ -3,101 +3,99 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kindle Reader (Legacy)</title>
+    <title>UniNovel Kindle</title>
     <style>
-        /* CSS BÁSICO E SEGURO */
-        body { background: white; color: black; font-family: Georgia, serif; font-size: 120%; margin: 0; padding: 5px; }
+        /* CSS OTIMIZADO PARA E-INK / KINDLE */
+        body { background: white; color: black; font-family: Georgia, serif; font-size: 100%; margin: 0; padding: 5px; }
         
-        /* Layout em Bloco (Evita Flexbox que trava Kindle antigo) */
-        .container { max-width: 100%; margin: 0 auto; }
-        
+        /* Elementos de UI grandes e sólidos */
         button {
-            display: block; width: 100%; padding: 15px 0; margin-bottom: 10px;
-            background: white; border: 3px solid black; color: black;
-            font-size: 18px; font-weight: bold; cursor: pointer; text-transform: uppercase;
+            display: block; width: 100%; padding: 12px 0; margin-bottom: 8px;
+            background: white; border: 2px solid black; color: black;
+            font-size: 16px; font-weight: bold; cursor: pointer; text-transform: uppercase;
         }
         button:hover { background: black; color: white; }
-
+        
         input[type="text"] {
-            width: 95%; padding: 10px; font-size: 18px;
+            width: 95%; padding: 10px; font-size: 16px;
             border: 2px solid black; margin-bottom: 10px;
         }
 
-        .novel-item { border-bottom: 1px solid black; padding: 10px 0; }
-        .novel-title { font-weight: bold; font-size: 1.1em; }
-        .source { font-size: 0.8em; background: #eee; padding: 2px; }
+        /* Tags de fonte */
+        .badge { font-size: 10px; padding: 2px 4px; color: white; font-weight: bold; vertical-align: middle; margin-right: 5px; }
+        .bg-central { background: #b71c1c; }
+        .bg-illusia { background: #0d47a1; }
+        .bg-mania { background: #1b5e20; }
 
+        .list-item { border-bottom: 1px solid #ccc; padding: 10px 0; }
+        .list-title { font-weight: bold; font-size: 1.1em; }
+        
+        /* Utilitários */
         .hidden { display: none; }
-        #loader { padding: 20px; text-align: center; font-weight: bold; border: 2px dashed black; display: none; }
+        #loader { padding: 15px; text-align: center; border: 2px dashed black; margin: 10px 0; display: none; }
         
-        /* Leitura */
-        #reader-text { text-align: justify; line-height: 1.5; }
-        #reader-text p { margin-bottom: 1em; }
-        #reader-text img { display: none; } /* Remove imagens para não travar */
+        /* Leitor */
+        #reader-content { text-align: justify; line-height: 1.6; font-size: 1.1em; }
+        #reader-content p { margin-bottom: 1em; }
+        #reader-content img { display: none !important; } /* Remove imagens para performance */
         
-        /* Navegação do Leitor */
         .nav-btns { margin-top: 20px; text-align: center; }
         .nav-btns button { width: 48%; display: inline-block; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div id="menu">
-        <button onclick="App.goHome()">INÍCIO / HISTÓRICO</button>
-        <input type="text" id="search-input" placeholder="Nome da Novel...">
-        <button onclick="App.search()">BUSCAR</button>
-    </div>
+<div id="menu">
+    <button onclick="App.goHome()">🏠 INÍCIO</button>
+    <input type="text" id="search-input" placeholder="Digite o nome da obra...">
+    <button onclick="App.search()">🔍 BUSCAR EM TODOS</button>
+</div>
 
-    <div id="loader">CARREGANDO... AGUARDE</div>
+<div id="loader">CARREGANDO...</div>
+<div id="status-msg" style="text-align:center; font-size: 0.8em; margin-bottom: 5px;"></div>
 
-    <div id="view-list" class="view">
-        <h2 id="list-header">Histórico</h2>
-        <div id="list-content"></div>
-    </div>
+<div id="view-list" class="view">
+    <h2 id="list-header">Histórico</h2>
+    <div id="list-content"></div>
+</div>
 
-    <div id="view-details" class="view hidden">
-        <h2 id="det-title"></h2>
-        <div id="det-chapters"></div>
-    </div>
+<div id="view-details" class="view hidden">
+    <h2 id="det-title"></h2>
+    <div id="det-desc" style="font-style: italic; font-size: 0.9em; margin-bottom: 10px;"></div>
+    <div id="det-chapters"></div>
+</div>
 
-    <div id="view-reader" class="view hidden">
-        <button onclick="App.backToDetails()">VOLTAR PARA CAPÍTULOS</button>
-        <h3 id="chap-title" style="text-align:center"></h3>
-        <hr>
-        <div id="reader-text"></div>
-        <div class="nav-btns">
-            <button id="btn-prev" onclick="App.prevChap()">ANTERIOR</button>
-            <button id="btn-next" onclick="App.nextChap()">PRÓXIMO</button>
-        </div>
-        <div style="height: 50px;"></div>
+<div id="view-reader" class="view hidden">
+    <button onclick="App.backToDetails()">≡ LISTA DE CAPÍTULOS</button>
+    <h3 id="chap-title" style="text-align:center; margin: 10px 0;"></h3>
+    <hr>
+    <div id="reader-content"></div>
+    <div class="nav-btns">
+        <button id="btn-prev" onclick="App.prevChap()">ANTERIOR</button>
+        <button id="btn-next" onclick="App.nextChap()">PRÓXIMO</button>
     </div>
+    <div style="height: 60px;"></div>
 </div>
 
 <script>
     // =========================================================
-    // UTILITÁRIOS (Compatível com IE8/Kindle Antigo)
+    // 1. UTILITÁRIOS HTTP (AJAX CLÁSSICO - ES5)
     // =========================================================
     var PROXY = "https://relaxed-churros-9a35ea.netlify.app/?destination=";
 
-    // Substituto do fetch (AJAX Clássico)
     function httpRequest(url, method, data, callback) {
         var xhr = new XMLHttpRequest();
         xhr.open(method, PROXY + url, true);
-        if (method === "POST") {
-            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-        }
+        if (method === "POST") xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+        
         xhr.onreadystatechange = function() {
             if (xhr.readyState === 4) {
-                if (xhr.status === 200) {
-                    callback(null, xhr.responseText);
-                } else {
-                    callback("Erro: " + xhr.status);
-                }
+                if (xhr.status === 200) callback(null, xhr.responseText);
+                else callback("Erro HTTP: " + xhr.status);
             }
         };
-        xhr.onerror = function() { callback("Erro de Conexão"); };
-        xhr.send(data);
+        xhr.onerror = function() { callback("Falha na conexão"); };
+        try { xhr.send(data); } catch(e) { callback(e.message); }
     }
 
     function parseHTML(html) {
@@ -106,252 +104,355 @@
         return div;
     }
 
+    function cleanText(txt) {
+        return txt ? txt.replace(/\s+/g, ' ').trim() : "";
+    }
+
     // =========================================================
-    // LÓGICA DA APLICAÇÃO
+    // 2. SCRAPERS (LÓGICA DE EXTRAÇÃO)
     // =========================================================
-    var App = {
-        history: [],
-        currentNovel: null,
-        currentChapId: null,
-
-        init: function() {
-            try {
-                var h = localStorage.getItem('kindle_hist_v2');
-                if (h) this.history = JSON.parse(h);
-            } catch(e) {}
-            this.renderHistory();
-        },
-
-        toggleLoader: function(show) {
-            document.getElementById('loader').style.display = show ? 'block' : 'none';
-        },
-
-        showView: function(id) {
-            var views = ['view-list', 'view-details', 'view-reader'];
-            for (var i = 0; i < views.length; i++) {
-                document.getElementById(views[i]).style.display = 'none';
-            }
-            document.getElementById(id).style.display = 'block';
-            window.scrollTo(0, 0);
-        },
-
-        // --- NAVEGAÇÃO ---
-        goHome: function() {
-            this.showView('view-list');
-            this.renderHistory();
-            document.getElementById('list-header').innerHTML = "Histórico";
-            document.getElementById('search-input').value = "";
-        },
-
-        // --- BUSCA ---
-        search: function() {
-            var q = document.getElementById('search-input').value;
-            if (!q) return;
-
-            this.showView('view-list');
-            document.getElementById('list-header').innerHTML = "Buscando: " + q;
-            document.getElementById('list-content').innerHTML = "";
-            this.toggleLoader(true);
-
-            // Busca simplificada: Apenas CentralNovel para evitar timeout do Kindle
-            // Kindle não aguenta muitas requisições paralelas
-            var that = this;
-            var body = "action=ts_ac_do_search&ts_ac_query=" + encodeURIComponent(q);
-            
-            httpRequest("https://centralnovel.com/wp-admin/admin-ajax.php", "POST", body, function(err, text) {
-                that.toggleLoader(false);
-                if (err) {
-                    alert(err);
-                    return;
-                }
-                
-                try {
-                    var json = JSON.parse(text);
-                    if (!json.series || !json.series[0]) {
-                        document.getElementById('list-content').innerHTML = "Nada encontrado.";
-                        return;
-                    }
-                    
-                    var html = "";
-                    var list = json.series[0].all;
-                    for (var i = 0; i < list.length; i++) {
-                        var item = list[i];
-                        var linkParts = item.post_link.split('/');
-                        var slug = linkParts[linkParts.length - 2] || linkParts[linkParts.length - 1];
-                        var id = 'central-' + slug;
+    var Scraper = {
+        // --- CENTRAL NOVEL ---
+        central: {
+            search: function(q, cb) {
+                var body = "action=ts_ac_do_search&ts_ac_query=" + encodeURIComponent(q);
+                httpRequest("https://centralnovel.com/wp-admin/admin-ajax.php", "POST", body, function(err, res) {
+                    if(err) return cb([]);
+                    try {
+                        var json = JSON.parse(res);
+                        if(!json.series || !json.series[0]) return cb([]);
+                        var list = json.series[0].all.map(function(item) {
+                            var slug = item.post_link.split('/').filter(Boolean).pop();
+                            return { 
+                                source: 'central', 
+                                id: 'central-' + slug, 
+                                title: item.post_title 
+                            };
+                        });
+                        cb(list);
+                    } catch(e) { cb([]); }
+                });
+            },
+            info: function(slug, cb) {
+                httpRequest("https://centralnovel.com/series/" + slug + "/", "GET", null, function(err, html) {
+                    if(err) return cb(null);
+                    var doc = parseHTML(html);
+                    var title = cleanText(doc.querySelector("h1").textContent);
+                    // Lógica específica: Titulo + Subtitulo
+                    var links = doc.querySelectorAll(".eplister li a");
+                    var chaps = [];
+                    for(var i=0; i<links.length; i++) {
+                        var a = links[i];
+                        var num = a.querySelector(".epl-num");
+                        var sub = a.querySelector(".epl-title");
+                        var t = cleanText(num ? num.textContent : "");
+                        var s = cleanText(sub ? sub.textContent : "");
+                        var fullTitle = t + (s ? " - " + s : "");
                         
-                        html += '<div class="novel-item">';
-                        html += '<div class="novel-title">' + item.post_title + '</div>';
-                        html += '<button style="margin-top:5px" onclick="App.loadNovel(\'' + id + '\')">ABRIR</button>';
-                        html += '</div>';
+                        var id = a.getAttribute("href").split('/').filter(Boolean).pop();
+                        chaps.push({ title: fullTitle, id: id });
                     }
-                    document.getElementById('list-content').innerHTML = html;
-                } catch (e) {
-                    document.getElementById('list-content').innerHTML = "Erro ao processar dados.";
-                }
-            });
+                    // Central geralmente lista do mais novo pro antigo, invertemos para leitura
+                    cb({ title: title, desc: "CentralNovel", chapters: chaps.reverse() });
+                });
+            },
+            read: function(slug, cb) {
+                httpRequest("https://centralnovel.com/" + slug + "/", "GET", null, function(err, html) {
+                    if(err) return cb(null);
+                    var doc = parseHTML(html);
+                    cb({
+                        title: cleanText(doc.querySelector("h1").textContent),
+                        content: doc.querySelector(".epcontent").innerHTML
+                    });
+                });
+            }
         },
 
-        // --- CARREGAR NOVEL ---
-        loadNovel: function(id) {
-            this.showView('view-details');
-            document.getElementById('det-title').innerHTML = "Carregando...";
-            document.getElementById('det-chapters').innerHTML = "";
-            this.toggleLoader(true);
-
-            var slug = id.replace('central-', '');
-            var that = this;
-
-            httpRequest("https://centralnovel.com/series/" + slug + "/", "GET", null, function(err, text) {
-                that.toggleLoader(false);
-                if (err) { alert("Erro ao carregar novel"); that.goHome(); return; }
-
-                var doc = parseHTML(text);
-                var title = doc.querySelector("h1").textContent;
-                var links = doc.querySelectorAll(".eplister a");
-                var chapters = [];
-
-                // Filter logic for central novel (only even links usually)
-                for (var i = 0; i < links.length; i++) {
-                    // Logica simplificada: pegar todos os links que parecem caps
-                    var t = links[i].querySelector(".epl-num");
-                    if (t) {
-                        var href = links[i].getAttribute("href");
-                        var parts = href.split('/');
-                        var cSlug = parts[parts.length - 2] || parts[parts.length - 1];
-                        chapters.push({ title: t.textContent, id: cSlug });
+        // --- ILLUSIA ---
+        illusia: {
+            search: function(q, cb) {
+                httpRequest("https://illusia.com.br/?s=" + encodeURIComponent(q) + "&post_type=fcn_story", "POST", null, function(err, html) {
+                    if(err) return cb([]);
+                    var doc = parseHTML(html);
+                    var items = doc.querySelectorAll("li.card a");
+                    var list = [];
+                    for(var i=0; i<items.length; i++) {
+                        var slug = items[i].getAttribute("href").split('/').filter(Boolean).pop();
+                        list.push({ source: 'illusia', id: 'illusia-' + slug, title: cleanText(items[i].textContent) });
                     }
-                }
-                
-                // Salvar estado atual
-                that.currentNovel = { id: id, title: title, chapters: chapters };
-                
-                // Renderizar
-                document.getElementById('det-title').innerHTML = title;
-                var html = '';
-                // Inverter para ficar do cap 1 ao atual, se necessário, ou manter recente
-                // Geralmente sites mostram recente primeiro.
-                for (var j = 0; j < chapters.length; j++) {
-                    var c = chapters[j];
-                    html += '<button style="text-align:left; font-weight:normal" onclick="App.read(\'' + c.id + '\')">' + c.title + '</button>';
-                }
-                document.getElementById('det-chapters').innerHTML = html;
-            });
-        },
-
-        // --- LER CAPÍTULO ---
-        read: function(chapId) {
-            this.currentChapId = chapId;
-            this.showView('view-reader');
-            document.getElementById('reader-text').innerHTML = "";
-            document.getElementById('chap-title').innerHTML = "Carregando...";
-            this.toggleLoader(true);
-
-            var that = this;
-            httpRequest("https://centralnovel.com/" + chapId + "/", "GET", null, function(err, text) {
-                that.toggleLoader(false);
-                if (err) { document.getElementById('reader-text').innerHTML = "Erro ao carregar texto."; return; }
-
-                var doc = parseHTML(text);
-                var content = doc.querySelector(".epcontent");
-                var title = doc.querySelector("h1").textContent;
-
-                // Limpeza de scripts e estilos do conteudo
-                var scripts = content.getElementsByTagName('script');
-                while(scripts.length > 0){ scripts[0].parentNode.removeChild(scripts[0]); }
-
-                document.getElementById('chap-title').innerHTML = title;
-                document.getElementById('reader-text').innerHTML = content.innerHTML;
-
-                // Atualiza histórico
-                that.addToHistory(that.currentNovel.title, title, that.currentNovel.id, chapId);
-                window.scrollTo(0,0);
-            });
-        },
-
-        // --- CONTROLES DE LEITURA ---
-        nextChap: function() {
-            if (!this.currentNovel) return;
-            var idx = -1;
-            for(var i=0; i<this.currentNovel.chapters.length; i++) {
-                if(this.currentNovel.chapters[i].id === this.currentChapId) {
-                    idx = i; break;
-                }
-            }
-            // CentralNovel lista do mais novo para o mais velho (descrescente)
-            // Então "Próximo" (história avança) é o indice anterior no array (idx - 1)
-            // Se a lista estiver invertida, mude a logica.
-            if (idx > 0) {
-                this.read(this.currentNovel.chapters[idx - 1].id);
-            } else {
-                alert("Sem mais capítulos recentes na lista carregada.");
+                    cb(list);
+                });
+            },
+            info: function(slug, cb) {
+                httpRequest("https://illusia.com.br/story/" + slug + "/", "GET", null, function(err, html) {
+                    if(err) return cb(null);
+                    var doc = parseHTML(html);
+                    var title = cleanText(doc.querySelector(".story__identity-title").textContent);
+                    var links = doc.querySelectorAll(".chapter-group__list a");
+                    var chaps = [];
+                    for(var i=0; i<links.length; i++) {
+                        var id = links[i].getAttribute("href").split('/').filter(Boolean).pop();
+                        chaps.push({ title: cleanText(links[i].textContent), id: id });
+                    }
+                    cb({ title: title, desc: "Illusia", chapters: chaps });
+                });
+            },
+            read: function(novelSlug, chapSlug, cb) {
+                httpRequest("https://illusia.com.br/story/" + novelSlug + "/" + chapSlug + "/", "GET", null, function(err, html) {
+                    if(err) return cb(null);
+                    var doc = parseHTML(html);
+                    cb({
+                        title: cleanText(doc.querySelector(".chapter__title").textContent),
+                        content: doc.querySelector("#chapter-content").innerHTML
+                    });
+                });
             }
         },
 
-        prevChap: function() {
-            if (!this.currentNovel) return;
-            var idx = -1;
-            for(var i=0; i<this.currentNovel.chapters.length; i++) {
-                if(this.currentNovel.chapters[i].id === this.currentChapId) {
-                    idx = i; break;
-                }
+        // --- NOVEL MANIA ---
+        mania: {
+            search: function(q, cb) {
+                httpRequest("https://novelmania.com.br/novels?titulo=" + encodeURIComponent(q), "GET", null, function(err, html) {
+                    if(err) return cb([]);
+                    var doc = parseHTML(html);
+                    var items = doc.querySelectorAll(".top-novels"); // Pode variar
+                    var list = [];
+                    for(var i=0; i<items.length; i++) {
+                        var h5 = items[i].querySelector("h5");
+                        var a = items[i].querySelector("a");
+                        if(h5 && a) {
+                            var slug = a.getAttribute("href").split('/').filter(Boolean).pop();
+                            list.push({ source: 'mania', id: 'mania-' + slug, title: cleanText(h5.textContent) });
+                        }
+                    }
+                    cb(list);
+                });
+            },
+            info: function(slug, cb) {
+                httpRequest("https://novelmania.com.br/novels/" + slug + "/", "GET", null, function(err, html) {
+                    if(err) return cb(null);
+                    var doc = parseHTML(html);
+                    var title = cleanText(doc.querySelector("h1").textContent);
+                    var links = doc.querySelectorAll("ol.list-inline li a");
+                    var chaps = [];
+                    for(var i=0; i<links.length; i++) {
+                        var id = links[i].getAttribute("href").split('/').filter(Boolean).pop();
+                        var strong = links[i].querySelector("strong");
+                        chaps.push({ title: cleanText(strong ? strong.textContent : "Capítulo"), id: id });
+                    }
+                    cb({ title: title, desc: "NovelMania", chapters: chaps });
+                });
+            },
+            read: function(novelSlug, chapSlug, cb) {
+                httpRequest("https://novelmania.com.br/novels/" + novelSlug + "/capitulos/" + chapSlug, "GET", null, function(err, html) {
+                    if(err) return cb(null);
+                    var doc = parseHTML(html);
+                    cb({
+                        title: cleanText(doc.querySelector("h2").textContent),
+                        content: doc.querySelector("#chapter-content").innerHTML
+                    });
+                });
             }
-            if (idx < this.currentNovel.chapters.length - 1) {
-                this.read(this.currentNovel.chapters[idx + 1].id);
-            } else {
-                alert("Este é o último capítulo disponível.");
-            }
-        },
-
-        backToDetails: function() {
-            this.showView('view-details');
-        },
-
-        // --- HISTÓRICO ---
-        addToHistory: function(novelName, chapName, novelId, chapId) {
-            // Remove duplicata
-            var newHist = [];
-            for(var i=0; i<this.history.length; i++) {
-                if(this.history[i].id !== novelId) newHist.push(this.history[i]);
-            }
-            newHist.unshift({
-                name: novelName,
-                lastChap: chapName,
-                id: novelId,
-                chapId: chapId
-            });
-            // Limita a 10 itens
-            if(newHist.length > 10) newHist.pop();
-            
-            this.history = newHist;
-            localStorage.setItem('kindle_hist_v2', JSON.stringify(this.history));
-        },
-
-        renderHistory: function() {
-            var el = document.getElementById('list-content');
-            if (this.history.length === 0) {
-                el.innerHTML = "<p>Nenhum histórico recente.</p>";
-                return;
-            }
-            var html = "";
-            for (var i = 0; i < this.history.length; i++) {
-                var h = this.history[i];
-                html += '<div class="novel-item">';
-                html += '<div class="novel-title">' + h.name + '</div>';
-                html += '<div class="source">Lido: ' + h.lastChap + '</div>';
-                html += '<button style="margin-top:5px" onclick="App.loadNovel(\'' + h.id + '\')">CAPÍTULOS</button>';
-                html += '<button style="margin-top:5px; border:1px solid #ccc" onclick="App.read(\'' + h.chapId + '\')">CONTINUAR</button>';
-                html += '</div>';
-            }
-            el.innerHTML = html;
         }
     };
 
-    // Inicializa
-    window.onload = function() {
-        App.init();
+    // =========================================================
+    // 3. APP CONTROLLER
+    // =========================================================
+    var App = {
+        history: [],
+        currNovel: null,
+        currChap: null,
+
+        init: function() {
+            try {
+                var h = localStorage.getItem('kindle_hist_v3');
+                if(h) this.history = JSON.parse(h);
+            } catch(e) {}
+            this.goHome();
+        },
+
+        loading: function(show, msg) {
+            document.getElementById('loader').style.display = show ? 'block' : 'none';
+            document.getElementById('status-msg').innerText = msg || "";
+        },
+
+        show: function(id) {
+            var vs = ['view-list', 'view-details', 'view-reader'];
+            for(var i=0; i<vs.length; i++) document.getElementById(vs[i]).style.display = 'none';
+            document.getElementById(id).style.display = 'block';
+            window.scrollTo(0,0);
+        },
+
+        goHome: function() {
+            this.show('view-list');
+            document.getElementById('list-header').innerText = "Histórico de Leitura";
+            document.getElementById('search-input').value = "";
+            
+            var c = document.getElementById('list-content');
+            if(this.history.length === 0) { c.innerHTML = "<p>Nada no histórico.</p>"; return; }
+            
+            var html = "";
+            for(var i=0; i<this.history.length; i++) {
+                var h = this.history[i];
+                html += '<div class="list-item">';
+                html += '<span class="badge bg-' + h.source + '">' + h.source + '</span>';
+                html += '<span class="list-title">' + h.name + '</span>';
+                html += '<div style="color:#666; font-size:0.9em; margin:5px 0">Parou em: ' + h.chapName + '</div>';
+                html += '<button onclick="App.loadNovel(\'' + h.id + '\')">VER CAPÍTULOS</button>';
+                html += '<button style="border-style:dashed" onclick="App.read(\'' + h.chapId + '\')">CONTINUAR</button>';
+                html += '</div>';
+            }
+            c.innerHTML = html;
+        },
+
+        search: function() {
+            var q = document.getElementById('search-input').value;
+            if(!q) return;
+            this.show('view-list');
+            document.getElementById('list-header').innerText = "Buscando: " + q;
+            document.getElementById('list-content').innerHTML = "";
+            
+            this.loading(true, "Pesquisando nas 3 fontes...");
+            
+            var results = [];
+            var pending = 3;
+            var done = function() {
+                pending--;
+                if(pending <= 0) {
+                    App.loading(false);
+                    if(results.length === 0) {
+                        document.getElementById('list-content').innerHTML = "<p>Nenhum resultado encontrado.</p>";
+                        return;
+                    }
+                    var html = "";
+                    for(var i=0; i<results.length; i++) {
+                        var r = results[i];
+                        html += '<div class="list-item">';
+                        html += '<span class="badge bg-' + r.source + '">' + r.source + '</span>';
+                        html += '<span class="list-title">' + r.title + '</span>';
+                        html += '<button style="margin-top:5px" onclick="App.loadNovel(\'' + r.id + '\')">ABRIR</button>';
+                        html += '</div>';
+                    }
+                    document.getElementById('list-content').innerHTML = html;
+                }
+            };
+
+            // Dispara as 3 buscas
+            Scraper.central.search(q, function(res) { results = results.concat(res); done(); });
+            Scraper.illusia.search(q, function(res) { results = results.concat(res); done(); });
+            Scraper.mania.search(q, function(res) { results = results.concat(res); done(); });
+        },
+
+        loadNovel: function(id) {
+            var parts = id.split('-');
+            var source = parts[0];
+            var slug = parts.slice(1).join('-');
+            
+            this.loading(true, "Carregando capítulos...");
+            this.show('view-details');
+            document.getElementById('det-title').innerText = "Carregando...";
+            document.getElementById('det-chapters').innerHTML = "";
+
+            var cb = function(info) {
+                App.loading(false);
+                if(!info) { alert("Erro ao carregar obra"); App.goHome(); return; }
+                
+                App.currNovel = { id: id, source: source, slug: slug, info: info };
+                document.getElementById('det-title').innerText = info.title;
+                document.getElementById('det-desc').innerText = "Fonte: " + info.desc;
+                
+                var html = "";
+                for(var i=0; i<info.chapters.length; i++) {
+                    var c = info.chapters[i];
+                    html += '<button style="text-align:left; font-weight:normal" onclick="App.read(\'' + c.id + '\')">' + c.title + '</button>';
+                }
+                document.getElementById('det-chapters').innerHTML = html;
+            };
+
+            if(source === 'central') Scraper.central.info(slug, cb);
+            else if(source === 'illusia') Scraper.illusia.info(slug, cb);
+            else if(source === 'mania') Scraper.mania.info(slug, cb);
+        },
+
+        read: function(chapId) {
+            if(!this.currNovel) return;
+            this.currChap = chapId;
+            this.show('view-reader');
+            this.loading(true, "Carregando texto...");
+            document.getElementById('reader-content').innerHTML = "";
+            document.getElementById('chap-title').innerText = "Carregando...";
+            
+            var cb = function(data) {
+                App.loading(false);
+                if(!data) { document.getElementById('reader-content').innerHTML = "Erro ao carregar."; return; }
+                
+                // Limpeza de scripts
+                var temp = parseHTML(data.content);
+                var scripts = temp.getElementsByTagName('script');
+                while(scripts[0]) scripts[0].parentNode.removeChild(scripts[0]);
+
+                document.getElementById('chap-title').innerText = data.title;
+                document.getElementById('reader-content').innerHTML = temp.innerHTML;
+                
+                // Salvar Histórico
+                App.saveHistory(data.title);
+                
+                window.scrollTo(0,0);
+            };
+
+            var s = this.currNovel.source;
+            var ns = this.currNovel.slug;
+            
+            if(s === 'central') Scraper.central.read(chapId, cb);
+            else if(s === 'illusia') Scraper.illusia.read(ns, chapId, cb);
+            else if(s === 'mania') Scraper.mania.read(ns, chapId, cb);
+        },
+
+        backToDetails: function() {
+            this.show('view-details');
+        },
+
+        saveHistory: function(chapName) {
+            var nid = this.currNovel.id;
+            var temp = [];
+            for(var i=0; i<this.history.length; i++) {
+                if(this.history[i].id !== nid) temp.push(this.history[i]);
+            }
+            temp.unshift({
+                id: nid,
+                name: this.currNovel.info.title,
+                source: this.currNovel.source,
+                chapName: chapName,
+                chapId: this.currChap
+            });
+            if(temp.length > 10) temp.pop();
+            this.history = temp;
+            localStorage.setItem('kindle_hist_v3', JSON.stringify(this.history));
+        },
+
+        // Navegação simples baseada em índice do array
+        nextChap: function() { this.moveChap(1); },
+        prevChap: function() { this.moveChap(-1); },
+        
+        moveChap: function(dir) {
+            var chaps = this.currNovel.info.chapters;
+            var idx = -1;
+            for(var i=0; i<chaps.length; i++) {
+                if(chaps[i].id === this.currChap) { idx = i; break; }
+            }
+            if(idx === -1) return;
+            
+            var newIdx = idx + dir;
+            if(newIdx >= 0 && newIdx < chaps.length) {
+                this.read(chaps[newIdx].id);
+            } else {
+                alert("Fim da lista carregada.");
+            }
+        }
     };
 
+    window.onload = function() { App.init(); };
 </script>
 </body>
 </html>
