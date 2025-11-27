@@ -1,9 +1,9 @@
 const CACHE_NAME = "uni-novel-cache-v1";
 const urlsToCache = [
-  "/",
-  "/index.html",
-  "/android-chrome-192x192.png", // Ícones
-  "/android-chrome-512x512.png"
+  "/UniNovel/",
+  "/UniNovel/index.html",
+  "/UniNovel/android-chrome-192x192.png", // Ícones
+  "/UniNovel/android-chrome-512x512.png"
 ];
 
 // Instalando o Service Worker
