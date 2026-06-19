@@ -355,7 +355,7 @@
       }
 
       async _fetch(url, options = {}) {
-        const targetUrl = .this.proxy + url;
+        const targetUrl = this.proxy + url;
         const res = await fetch(targetUrl, {
           method: options.method || "GET",
           headers: options.headers || {},
