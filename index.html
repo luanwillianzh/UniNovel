@@ -33,26 +33,7 @@
       }
     }
   </script>
-  <style>
-    * { scrollbar-width: thin; scrollbar-color: #d6d3d1 #f5f5f4; }
-    .dark * { scrollbar-color: #44403c #1c1917; }
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: #f5f5f4; }
-    ::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 3px; }
-    .dark ::-webkit-scrollbar-track { background: #1c1917; }
-    .dark ::-webkit-scrollbar-thumb { background: #44403c; }
-    .prose-reader { font-family: 'Merriweather', Georgia, serif; line-height: 2; color: #44403c; }
-    .dark .prose-reader { color: #d6d3d1; }
-    .prose-reader img { max-width: 100%; height: auto; display: block; margin: 1.5em auto; border-radius: 8px; }
-    .prose-reader p { margin-bottom: 1.4em; }
-    .fade-in { animation: fadeUp .35s ease-out; }
-    @keyframes fadeUp { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
-    .slide-up { animation: slideUp .4s cubic-bezier(.16,1,.3,1); }
-    @keyframes slideUp { from { opacity:0; transform:translateY(100%) } to { opacity:1; transform:translateY(0) } }
-    .card-hover { transition: transform .2s, box-shadow .2s; }
-    .card-hover:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(0,0,0,.15); }
-    .dark .card-hover:hover { box-shadow: 0 20px 40px rgba(0,0,0,.5); }
-  </style>
+  <link rel="stylesheet" href="css/app.css" />
 </head>
 <body class="bg-ink-50 dark:bg-ink-950 text-ink-800 dark:text-ink-200 min-h-screen flex flex-col font-sans antialiased transition-colors duration-300">
 
@@ -199,8 +180,8 @@
     <div class="relative bg-gradient-to-b from-white to-ink-50 dark:from-ink-900 dark:to-ink-950 border border-yellow-300 dark:border-yellow-600/30 rounded-3xl p-8 max-w-md w-full shadow-2xl shadow-yellow-500/10 text-center slide-up transition-colors">
       <div class="text-5xl mb-4">&#127183;</div>
       <h2 class="text-xl font-bold text-yellow-600 dark:text-yellow-400 mb-4 font-serif leading-relaxed">Praise the Fool</h2>
-      <p class="text-ink-600 dark:text-ink-300 text-sm leading-relaxed mb-2 font-serif italic">"O Tolo que nao pertence a essa era.</p>
-      <p class="text-ink-600 dark:text-ink-300 text-sm leading-relaxed mb-2 font-serif italic">O governante acima da nevoa cinza.</p>
+      <p class="text-ink-600 dark:text-ink-300 text-sm leading-relaxed mb-2 font-serif italic">"O Tolo que não pertence a essa era.</p>
+      <p class="text-ink-600 dark:text-ink-300 text-sm leading-relaxed mb-2 font-serif italic">O governante acima da névoa cinza.</p>
       <p class="text-ink-600 dark:text-ink-300 text-sm leading-relaxed mb-6 font-serif italic">O rei do amarelo e preto que exerce a boa sorte."</p>
       <hr class="border-ink-200 dark:border-ink-700"><br>
       <p class="text-ink-600 dark:text-ink-300 text-sm leading-relaxed mb-6 font-serif">Entre para o nosso grupo de Telegram.<br>Grupo focado em compartilhamento e tradução de novels e livros.</p>
@@ -238,21 +219,21 @@
 
       <div class="space-y-3 text-sm text-ink-600 dark:text-ink-300 leading-relaxed transition-colors">
         <p>
-          O <strong class="text-ink-800 dark:text-ink-100">UniNovel</strong> e um leitor de novels que reune various fontes em um so lugar.
-          Busque, leia e baixe seus capsulos favoritos no formato EPUB.
+          O <strong class="text-ink-800 dark:text-ink-100">UniNovel</strong> é um leitor de novels que reune várias fontes em um só lugar.
+          Busque, leia e baixe seus capítulos favoritos no formato EPUB.
         </p>
         <p>
           Fontes integradas: <strong class="text-ink-800 dark:text-ink-100">Central Novel</strong>, <strong class="text-ink-800 dark:text-ink-100">Illusia</strong> e <strong class="text-ink-800 dark:text-ink-100">Novel Mania</strong>.
         </p>
         <p class="text-xs text-ink-400 dark:text-ink-500 italic">
-          Todos os direitos dos conteudos pertencem aos respectivos sites de origem.
+          Todos os direitos dos conteúdos pertencem aos respectivos sites de origem.
         </p>
       </div>
 
       <hr class="border-ink-200 dark:border-ink-700 my-5" />
 
       <p class="text-sm text-ink-600 dark:text-ink-300 mb-4 transition-colors">
-        Entre para o nosso grupo de Telegram! Grupo focado em compartilhamento e traducao de novels e livros.
+        Entre para o nosso grupo de Telegram! Grupo focado em compartilhamento e tradução de novels e livros.
       </p>
       <a href="https://t.me/Clube_do_Taro" target="_blank" rel="noopener"
         class="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-sky-100 dark:bg-sky-500/15 border border-sky-300 dark:border-sky-500/30 text-sky-600 dark:text-sky-400 text-sm font-semibold hover:bg-sky-200 dark:hover:bg-sky-500/25 transition-colors mb-5">
@@ -271,359 +252,6 @@
   <script src="lib/mania.js"></script>
   <script src="lib/api.js"></script>
   <script src="lib/epub.js"></script>
-  <script>
-    (() => {
-      const $ = (id) => document.getElementById(id);
-
-      class App {
-        constructor() {
-          this.api = NovelApi;
-          this.epubDownloader = new EpubDownloader(this.api);
-          this.currentNovelId = null;
-          this.currentNovelInfo = null;
-          this.history = JSON.parse(localStorage.getItem('uninovel_history') || '[]');
-          this.favorites = JSON.parse(localStorage.getItem('uninovel_favorites') || '[]');
-
-          this.views = { home: $('view-home'), details: $('view-details'), reader: $('view-reader') };
-
-          $('search-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') this.search(); });
-
-          this.loadReleases();
-        }
-
-        /* ---- theme ---- */
-        toggleTheme() {
-          const isDark = document.documentElement.classList.toggle('dark');
-          localStorage.setItem('uninovel_theme', isDark ? 'dark' : 'light');
-        }
-
-        /* ---- navigation ---- */
-        showView(name) {
-          Object.values(this.views).forEach(v => v.classList.add('hidden'));
-          this.views[name].classList.remove('hidden');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        toggleLoader(on) { $('loader').classList.toggle('hidden', !on); }
-        goBack() { this.showView('home'); this.renderHistory(); this.renderFavorites(); }
-        goBackToDetails() { this.currentNovelId ? this.showView('details') : this.goHome(); }
-        goHome() { $('search-input').value = ''; $('home-title').textContent = 'Lancamentos'; this.loadReleases(); this.renderFavorites(); }
-
-        /* ---- data fetching ---- */
-        async loadReleases() {
-          this.showView('home');
-          this.renderHistory();
-          this.renderFavorites();
-          $('novel-list').innerHTML = '';
-          this.toggleLoader(true);
-          try {
-            this.renderGrid(await this.api.lancamentosAll(), 'novel-list');
-          } catch (e) {
-            console.error(e);
-            $('novel-list').innerHTML = `<div class="col-span-full text-center py-16 text-ink-400 dark:text-ink-500">Erro de rede.</div>`;
-          } finally { this.toggleLoader(false); }
-        }
-
-        async search() {
-          const q = $('search-input').value.trim();
-          if (!q) return;
-          if (q.toLowerCase() === 'praise the fool') { this.showEasterEgg(); return; }
-          this.showView('home');
-          $('home-title').textContent = `Resultados: "${q}"`;
-          $('novel-list').innerHTML = '';
-          $('history-section').classList.add('hidden');
-          this.toggleLoader(true);
-          try { this.renderGrid(await this.api.searchAll(q), 'novel-list'); }
-          catch (e) { console.error(e); }
-          finally { this.toggleLoader(false); }
-        }
-
-        /* ---- rendering ---- */
-        renderGrid(novels, containerId) {
-          const c = $(containerId);
-          const seen = new Set();
-          const unique = novels.filter(n => { if (seen.has(n.url)) return false; seen.add(n.url); return true; });
-
-          if (!unique.length) {
-            c.innerHTML = `<div class="col-span-full text-center py-16 text-ink-400 dark:text-ink-500">Nenhum resultado encontrado.</div>`;
-            return;
-          }
-
-          const badge = (s) => s === 'central' ? 'bg-red-500/90' : s === 'illusia' ? 'bg-sky-500/90' : 'bg-emerald-500/90';
-
-          c.innerHTML = unique.map(n => `
-            <div class="card-hover rounded-2xl overflow-hidden bg-white dark:bg-ink-900 border border-ink-200 dark:border-ink-800/50 cursor-pointer flex flex-col transition-colors"
-                 onclick="app.openNovel('${n.url}')">
-              <div class="relative">
-                <img src="${n.cover}" loading="lazy" class="w-full aspect-[3/4] object-cover bg-ink-100 dark:bg-ink-800"
-                  onerror="this.src='https://via.placeholder.com/300x400?text=Sem+Capa'" />
-                <span class="absolute top-2.5 right-2.5 px-2 py-0.5 text-[10px] font-bold uppercase rounded-lg ${badge(n.source)} text-white/95 backdrop-blur-sm">${n.source}</span>
-              </div>
-              <div class="p-3 flex-1 flex items-end">
-                <h3 class="text-sm font-medium text-ink-800 dark:text-ink-200 line-clamp-2 leading-snug transition-colors">${n.nome}</h3>
-              </div>
-            </div>`).join('');
-        }
-
-        renderHistory() {
-          const c = $('history-list');
-          const s = $('history-section');
-          if (!this.history.length) { s.classList.add('hidden'); return; }
-          s.classList.remove('hidden');
-
-          const badge = (src) => src === 'central' ? 'bg-red-500/90' : src === 'illusia' ? 'bg-sky-500/90' : 'bg-emerald-500/90';
-
-          c.innerHTML = this.history.map(h => `
-            <div class="card-hover rounded-2xl overflow-hidden bg-white dark:bg-ink-900 border border-ink-200 dark:border-ink-800/50 cursor-pointer flex gap-0 transition-colors"
-                 onclick="app.readChapter('${h.id}','${h.chapterId}')">
-              <img src="${h.cover}" loading="lazy" class="w-24 h-full object-cover bg-ink-100 dark:bg-ink-800 flex-shrink-0"
-                onerror="this.src='https://via.placeholder.com/100'" />
-              <div class="flex-1 p-3 min-w-0 flex flex-col justify-center">
-                <span class="inline-block self-start px-1.5 py-0.5 text-[9px] font-bold uppercase rounded ${badge(h.source)} text-white/90 mb-1.5">${h.source}</span>
-                <h3 class="text-sm font-medium text-ink-800 dark:text-ink-200 truncate transition-colors">${h.title}</h3>
-                <p class="text-xs text-brand-500 dark:text-brand-400 mt-1 truncate font-medium">&blacktriangleright; ${h.chapterTitle || 'Continuar'}</p>
-              </div>
-            </div>`).join('');
-        }
-
-        /* ---- favorites ---- */
-        isFavorite(id) { return this.favorites.some(f => f.id === id); }
-
-        toggleFavorite(id) {
-          if (this.isFavorite(id)) {
-            this.favorites = this.favorites.filter(f => f.id !== id);
-          } else {
-            const info = this.currentNovelInfo;
-            const old = this.history.find(h => h.id === id);
-            this.favorites.unshift({
-              id,
-              title: info?.nome || old?.title || 'Unknown',
-              cover: info?.cover || old?.cover || '',
-              source: id.split('-')[0],
-            });
-            if (this.favorites.length > 50) this.favorites.pop();
-          }
-          localStorage.setItem('uninovel_favorites', JSON.stringify(this.favorites));
-          this.renderFavorites();
-          const btn = $('fav-btn');
-          if (btn) this._updateFavBtn(btn, id);
-        }
-
-        _updateFavBtn(btn, id) {
-          const active = this.isFavorite(id);
-          btn.innerHTML = active
-            ? '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>'
-            : '<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
-          btn.className = `p-2.5 rounded-xl border transition-all ${active ? 'bg-rose-500/15 border-rose-400/50 text-rose-500' : 'bg-ink-100 dark:bg-ink-800 border-ink-300 dark:border-ink-700/50 text-ink-400 dark:text-ink-500 hover:text-rose-400 hover:border-rose-400/50'}`;
-        }
-
-        renderFavorites() {
-          const c = $('favorites-list');
-          const s = $('favorites-section');
-          if (!this.favorites.length) { s.classList.add('hidden'); return; }
-          s.classList.remove('hidden');
-
-          c.innerHTML = this.favorites.map(f => `
-            <div class="card-hover rounded-2xl overflow-hidden bg-white dark:bg-ink-900 border border-ink-200 dark:border-ink-800/50 cursor-pointer flex flex-col transition-colors relative group"
-                 onclick="app.openNovel('${f.id}')">
-              <div class="relative">
-                <img src="${f.cover}" loading="lazy" class="w-full aspect-[3/4] object-cover bg-ink-100 dark:bg-ink-800"
-                  onerror="this.src='https://via.placeholder.com/300x400?text=Sem+Capa'" />
-                <button onclick="event.stopPropagation(); app.toggleFavorite('${f.id}')"
-                  class="absolute top-2.5 left-2.5 p-1.5 rounded-lg bg-black/40 text-white backdrop-blur-sm hover:bg-rose-500/80 transition-colors">
-                  <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                </button>
-              </div>
-              <div class="p-3 flex-1 flex items-end">
-                <h3 class="text-sm font-medium text-ink-800 dark:text-ink-200 line-clamp-2 leading-snug transition-colors">${f.title}</h3>
-              </div>
-            </div>`).join('');
-        }
-
-        /* ---- novel details ---- */
-        async openNovel(id) {
-          this.currentNovelId = id;
-          this.showView('details');
-          const box = $('details-container');
-          box.innerHTML = '';
-          this.toggleLoader(true);
-
-          try {
-            const info = await this.api.getNovelInfoAll(id);
-            this.currentNovelInfo = info;
-
-            const genres = info.genres?.map(g =>
-              `<span class="inline-block px-2.5 py-0.5 rounded-lg bg-ink-100 dark:bg-ink-800 text-ink-600 dark:text-ink-300 text-xs border border-ink-200 dark:border-ink-700/50 transition-colors">${g[1]}</span>`
-            ).join('') || '';
-
-            const hist = this.history.find(h => h.id === id);
-            const contBtn = hist?.chapterTitle
-              ? `<button onclick="app.readChapter('${id}','${hist.chapterId}')"
-                  class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-brand-500 to-brand-400 text-white font-bold text-sm hover:shadow-lg hover:shadow-brand-500/20 transition-all flex items-center justify-center gap-2">
-                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                  Continuar: ${hist.chapterTitle}
-                </button>`
-              : '';
-
-            const chaps = info.chapters.map(c => `
-              <button onclick="app.readChapter('${id}','${c[1]}')"
-                class="py-2 px-3 rounded-xl bg-ink-100 dark:bg-ink-800/70 border border-ink-200 dark:border-ink-700/40 text-xs text-ink-600 dark:text-ink-300 hover:border-brand-500/50 hover:text-brand-500 dark:hover:text-brand-300 hover:bg-ink-50 dark:hover:bg-ink-800 transition-all text-left truncate">
-                ${c[0]}
-              </button>`).join('');
-
-            box.innerHTML = `
-              <div class="flex flex-col md:flex-row gap-6 mb-8">
-                <img class="w-44 md:w-48 rounded-2xl shadow-2xl shadow-black/10 dark:shadow-black/40 flex-shrink-0 mx-auto md:mx-0" src="${info.cover}"
-                  onerror="this.src='https://via.placeholder.com/200x280'" />
-                <div class="flex-1 min-w-0">
-                  <h2 class="text-2xl font-bold text-ink-900 dark:text-ink-50 mb-3 leading-tight transition-colors">${info.nome}</h2>
-                  <div class="flex flex-wrap gap-1.5 mb-3">${genres}</div>
-                  <div class="text-sm text-ink-500 dark:text-ink-400 max-h-36 overflow-y-auto bg-ink-50 dark:bg-ink-900 border border-ink-200 dark:border-ink-800/50 rounded-xl p-4 whitespace-pre-wrap leading-relaxed transition-colors">
-                    ${info.desc || 'Sem descricao disponivel.'}
-                  </div>
-                </div>
-              </div>
-
-              <div class="flex flex-col sm:flex-row gap-3 mb-8">
-                ${contBtn}
-                <button id="fav-btn" onclick="app.toggleFavorite('${id}')"
-                  class="p-3.5 rounded-2xl border transition-all flex-shrink-0 flex items-center justify-center"></button>
-                <button onclick="app.downloadEpub('${id}')"
-                  class="flex-1 py-3.5 rounded-2xl bg-ink-100 dark:bg-ink-800 border border-ink-200 dark:border-ink-700/50 text-ink-700 dark:text-ink-200 font-semibold text-sm hover:bg-ink-200 dark:hover:bg-ink-700 hover:border-ink-300 dark:hover:border-ink-600 transition-all flex items-center justify-center gap-2">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4m4-5 5 5 5-5m-5 5V3"/></svg>
-                  Baixar EPUB
-                </button>
-              </div>
-
-              <div class="flex items-center gap-3 mb-4">
-                <div class="w-1 h-5 rounded-full bg-brand-500"></div>
-                <h3 class="text-sm font-semibold text-ink-500 dark:text-ink-300 uppercase tracking-wider transition-colors">Capitulos (${info.chapters.length})</h3>
-              </div>
-              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">${chaps}</div>
-            `;
-            this._updateFavBtn($('fav-btn'), id);
-          } catch (e) {
-            box.innerHTML = `<div class="text-center py-20 text-ink-400 dark:text-ink-500">Falha ao carregar informacoes da novel.</div>`;
-            console.error(e);
-          } finally { this.toggleLoader(false); }
-        }
-
-        /* ---- reader ---- */
-        async readChapter(novelId, chapterId) {
-          this.showView('reader');
-          const content = $('reader-content');
-          content.innerHTML = '';
-          $('reader-chapter-title').textContent = 'Carregando...';
-          $('reader-novel-title').textContent = '';
-          this.toggleLoader(true);
-          window.scrollTo({ top: 0 });
-
-          try {
-            const d = await this.api.getChapterAll(novelId, chapterId);
-
-            $('reader-novel-title').textContent = d.novelTitle;
-            $('reader-chapter-title').textContent = d.title;
-
-            content.innerHTML = `
-              <h1 class="text-2xl font-bold text-ink-900 dark:text-ink-50 mb-2 font-serif transition-colors">${d.title}</h1>
-              ${d.subtitle ? `<p class="text-sm text-ink-400 dark:text-ink-500 mb-6 italic transition-colors">${d.subtitle}</p>` : '<div class="mb-6"></div>'}
-              <hr class="border-ink-200 dark:border-ink-800 mb-8" />
-              ${d.content}
-            `;
-
-            this.updateHistory(novelId, chapterId, d.title);
-
-            const link = (id1, id2, target, label) => {
-              [id1, id2].forEach(id => {
-                const el = $(id);
-                el.textContent = label;
-                if (target) {
-                  el.disabled = false;
-                  el.onclick = () => this.readChapter(novelId, target);
-                } else {
-                  el.disabled = true;
-                  el.onclick = null;
-                }
-              });
-            };
-            link('btn-prev', 'btn-prev-btm', d.nextChapterId, '\u2190 Ant');
-            link('btn-next', 'btn-next-btm', d.prevChapterId, 'Prox \u2192');
-          } catch (e) {
-            content.innerHTML = `<div class="text-center py-20 text-ink-400 dark:text-ink-500">Falha ao carregar capitulo.</div>`;
-            console.error(e);
-          } finally { this.toggleLoader(false); }
-        }
-
-        /* ---- history ---- */
-        updateHistory(novelId, chapterId, chapterTitle) {
-          const old = this.history.find(h => h.id === novelId);
-          let title = 'Unknown', cover = '';
-
-          if (this.currentNovelInfo) { title = this.currentNovelInfo.nome; cover = this.currentNovelInfo.cover; }
-          else if (old) { title = old.title; cover = old.cover; }
-
-          const entry = { id: novelId, title, cover, chapterId, chapterTitle, source: novelId.split('-')[0], timestamp: Date.now() };
-          this.history = this.history.filter(h => h.id !== novelId);
-          this.history.unshift(entry);
-          if (this.history.length > 20) this.history.pop();
-          localStorage.setItem('uninovel_history', JSON.stringify(this.history));
-        }
-
-        /* ---- epub ---- */
-        downloadEpub(novelId) {
-          const m = $('epub-modal');
-          m.classList.remove('hidden');
-          $('epub-progress-section').classList.remove('hidden');
-          $('epub-complete-section').classList.add('hidden');
-          $('epub-cancel-btn').classList.remove('hidden');
-          $('epub-close-btn').classList.add('hidden');
-          $('epub-progress-bar').style.width = '0%';
-          $('epub-status').textContent = 'Preparando...';
-          $('epub-counter').textContent = '0/0';
-          $('epub-chapter-name').textContent = '';
-
-          this.epubDownloader.download(novelId, {
-            onProgress: (p) => {
-              if (p.phase === 'cover') {
-                $('epub-status').textContent = p.status;
-                $('epub-progress-bar').style.width = '5%';
-              } else if (p.phase === 'chapters') {
-                const pct = Math.round((p.current / p.total) * 90) + 5;
-                $('epub-progress-bar').style.width = pct + '%';
-                $('epub-status').textContent = p.status;
-                $('epub-counter').textContent = `${p.current}/${p.total}`;
-                $('epub-chapter-name').textContent = p.chapterTitle;
-              } else if (p.phase === 'pack') {
-                $('epub-progress-bar').style.width = '98%';
-                $('epub-status').textContent = p.status;
-              }
-            }
-          }).then(() => {
-            if (!this.epubDownloader.cancelled) {
-              $('epub-progress-bar').style.width = '100%';
-              $('epub-progress-section').classList.add('hidden');
-              $('epub-complete-section').classList.remove('hidden');
-              $('epub-cancel-btn').classList.add('hidden');
-              $('epub-close-btn').classList.remove('hidden');
-            }
-          }).catch(e => {
-            console.error('EPUB error:', e);
-            $('epub-status').textContent = 'Erro: ' + e.message;
-          });
-        }
-
-        cancelEpub() { this.epubDownloader.cancel(); $('epub-modal').classList.add('hidden'); }
-        closeEpubModal() { $('epub-modal').classList.add('hidden'); }
-
-        showEasterEgg() { $('easter-egg-modal').classList.remove('hidden'); }
-        closeEasterEgg() { $('easter-egg-modal').classList.add('hidden'); }
-
-        showAbout() { $('about-modal').classList.remove('hidden'); }
-        closeAbout() { $('about-modal').classList.add('hidden'); }
-      }
-
-      window.app = new App();
-    })();
-  </script>
+  <script src="js/app.js"></script>
 </body>
 </html>
