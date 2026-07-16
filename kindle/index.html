@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UniNovel - Kindle</title>
+  <style>
+    /* Reset e base */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: Georgia, 'Times New Roman', serif; 
+      background: #fff; 
+      color: #000; 
+      line-height: 1.6;
+      font-size: 16px;
+      width: 100%;
+    }
+    
+    /* Layout com floats */
+    .clearfix:after { content: ""; display: table; clear: both; }
+    
+    /* Header */
+    #header {
+      background: #000;
+      color: #fff;
+      padding: 10px;
+      border-bottom: 2px solid #000;
+    }
+    #header h1 { 
+      font-size: 1.5em; 
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    
+    /* Busca */
+    #search-box {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    #search-input {
+      width: 70%;
+      padding: 8px;
+      font-size: 16px;
+      border: 2px solid #000;
+      float: left;
+    }
+    #search-btn {
+      width: 28%;
+      padding: 8px;
+      font-size: 16px;
+      background: #000;
+      color: #fff;
+      border: 2px solid #000;
+      float: right;
+      cursor: pointer;
+    }
+    
+    /* Navegação */
+    #nav {
+      background: #eee;
+      padding: 10px;
+      border-bottom: 2px solid #000;
+      text-align: center;
+    }
+    #nav button {
+      padding: 8px 15px;
+      margin: 2px;
+      font-size: 14px;
+      background: #fff;
+      border: 2px solid #000;
+      cursor: pointer;
+    }
+    #nav button.active {
+      background: #000;
+      color: #fff;
+    }
+    
+    /* Conteúdo principal */
+    #content {
+      padding: 15px;
+      min-height: 400px;
+    }
+    
+    /* Lista de novels */
+    .novel-list {
+      list-style: none;
+    }
+    .novel-item {
+      border: 2px solid #000;
+      margin-bottom: 15px;
+      padding: 10px;
+      cursor: pointer;
+    }
+    .novel-item:hover {
+      background: #eee;
+    }
+    .novel-item h3 {
+      font-size: 1.2em;
+      margin-bottom: 5px;
+    }
+    .novel-item p {
+      font-size: 0.9em;
+      color: #333;
+    }
+    .novel-item .source {
+      display: inline-block;
+      background: #000;
+      color: #fff;
+      padding: 2px 6px;
+      font-size: 0.8em;
+      margin-top: 5px;
+    }
+    
+    /* Detalhes da novel */
+    #novel-details {
+      display: none;
+    }
+    .novel-header {
+      border-bottom: 2px solid #000;
+      padding-bottom: 15px;
+      margin-bottom: 15px;
+    }
+    .novel-title {
+      font-size: 1.5em;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .novel-desc {
+      font-style: italic;
+      margin-bottom: 15px;
+      line-height: 1.8;
+    }
+    .chapter-list {
+      list-style: none;
+    }
+    .chapter-item {
+      border: 1px solid #000;
+      padding: 8px;
+      margin-bottom: 5px;
+      cursor: pointer;
+      font-size: 0.9em;
+    }
+    .chapter-item:hover {
+      background: #eee;
+    }
+    
+    /* Leitor */
+    #reader {
+      display: none;
+    }
+    .reader-header {
+      border-bottom: 2px solid #000;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+    .reader-title {
+      font-size: 1.4em;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    .reader-subtitle {
+      font-style: italic;
+      color: #333;
+    }
+    .reader-content {
+      line-height: 2;
+      font-size: 1.1em;
+      text-align: justify;
+    }
+    .reader-content p {
+      margin-bottom: 1.5em;
+      text-indent: 2em;
+    }
+    .reader-content img {
+      max-width: 100%;
+      display: block;
+      margin: 1em auto;
+    }
+    .reader-nav {
+      border-top: 2px solid #000;
+      padding-top: 15px;
+      margin-top: 20px;
+      text-align: center;
+    }
+    .reader-nav button {
+      padding: 10px 20px;
+      margin: 5px;
+      font-size: 16px;
+      background: #fff;
+      border: 2px solid #000;
+      cursor: pointer;
+    }
+    .reader-nav button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    /* Loader */
+    #loader {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      font-style: italic;
+    }
+    
+    /* Histórico e Favoritos */
+    .section-title {
+      font-size: 1.2em;
+      font-weight: bold;
+      border-bottom: 2px solid #000;
+      padding-bottom: 5px;
+      margin-bottom: 15px;
+    }
+    .history-item {
+      border: 1px solid #000;
+      padding: 10px;
+      margin-bottom: 10px;
+      cursor: pointer;
+    }
+    .history-item:hover {
+      background: #eee;
+    }
+    .history-item h4 {
+      margin-bottom: 5px;
+    }
+    .history-item p {
+      font-size: 0.9em;
+      color: #333;
+    }
+    
+    /* Botão voltar */
+    .back-btn {
+      display: inline-block;
+      padding: 8px 15px;
+      margin-bottom: 15px;
+      font-size: 14px;
+      background: #fff;
+      border: 2px solid #000;
+      cursor: pointer;
+    }
+    .back-btn:hover {
+      background: #eee;
+    }
+    
+    /* Footer */
+    #footer {
+      border-top: 2px solid #000;
+      padding: 15px;
+      text-align: center;
+      font-size: 0.9em;
+      color: #333;
+    }
+    
+    /* Utilitários */
+    .hidden { display: none !important; }
+    .clearfix:after { content: ""; display: table; clear: both; }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div id="header">
+    <h1>UniNovel</h1>
+    <div id="search-box" class="clearfix">
+      <input type="text" id="search-input" placeholder="Buscar novel...">
+      <button id="search-btn">Buscar</button>
+    </div>
+  </div>
+  
+  <!-- Navegação -->
+  <div id="nav">
+    <button id="nav-home" class="active">Início</button>
+    <button id="nav-history">Histórico</button>
+    <button id="nav-favorites">Favoritos</button>
+  </div>
+  
+  <!-- Loader -->
+  <div id="loader">Carregando...</div>
+  
+  <!-- Conteúdo principal -->
+  <div id="content">
+    <!-- View Home -->
+    <div id="view-home">
+      <div id="history-section" class="hidden">
+        <h2 class="section-title">Continuar Lendo</h2>
+        <div id="history-list"></div>
+      </div>
+      
+      <div id="favorites-section" class="hidden">
+        <h2 class="section-title">Favoritos</h2>
+        <div id="favorites-list"></div>
+      </div>
+      
+      <h2 id="home-title" class="section-title">Lançamentos</h2>
+      <div id="novel-list"></div>
+    </div>
+    
+    <!-- View Detalhes -->
+    <div id="view-details" class="hidden">
+      <button class="back-btn" id="btn-back-details">← Voltar</button>
+      <div id="details-container"></div>
+    </div>
+    
+    <!-- View Leitor -->
+    <div id="view-reader" class="hidden">
+      <button class="back-btn" id="btn-back-reader">← Voltar</button>
+      <div class="reader-header">
+        <div id="reader-novel-title" class="reader-subtitle"></div>
+        <div id="reader-chapter-title" class="reader-title"></div>
+      </div>
+      <div id="reader-content" class="reader-content"></div>
+      <div class="reader-nav">
+        <button id="btn-prev">← Anterior</button>
+        <button id="btn-next">Próximo →</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Footer -->
+  <div id="footer">
+    UniNovel — Leitor de novels para Kindle
+  </div>
+  
+  <!-- Scripts -->
+  <script src="lib/base.js"></script>
+  <script src="lib/central.js"></script>
+  <script src="lib/illusia.js"></script>
+  <script src="lib/mania.js"></script>
+  <script src="lib/api.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
