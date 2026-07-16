@@ -2,7 +2,7 @@
   "name": "UniNovel",
   "short_name": "UniNovel",
   "description": "Leitor de novels universal - busque, leia e baixa novels de multiplas fontes",
-  "start_url": "/",
+  "start_url": "/UniNovel/",
   "display": "standalone",
   "background_color": "#0c0a09",
   "theme_color": "#14b8a6",
